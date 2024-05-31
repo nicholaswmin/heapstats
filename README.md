@@ -32,6 +32,9 @@ console.log(usage.plot)
 
 ### Time based collection
 
+> Actually, it's immediately following a garbage collection cycle, so not
+> actually "time" based.
+
 `memstat.record()`
 
 ```js
@@ -57,7 +60,7 @@ Apart from the ASCII plot, `memstat.end()` returns:
 ```js
 console.log(usage)
 /*
-  initial: 10485760, // heap size byes on instantiation
+  initial: 10485760, // heap size bytes on instantiation
   current: 15728640, // current heap size bytes
   max: 15728640, // max heap size bytes reached
   percentageIncrease: 49, // increase between initial - now, in %
