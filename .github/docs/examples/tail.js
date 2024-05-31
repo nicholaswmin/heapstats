@@ -4,4 +4,6 @@
 import { leaky } from '../../../test/leaky.js'
 import Memstat from '../../../index.js'
 
-setInterval(() => leaky({ mb: 10 }), 1 * 750)
+setInterval(() => {
+  leaky({ mb: 50 })
+}, 1 * 1000)

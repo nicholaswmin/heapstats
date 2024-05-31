@@ -30,6 +30,18 @@ const usage = await memstat.end()
 console.log(usage.plot)
 ```
 
+where a leaky function could look like this:
+
+```js
+let leak = '' // oops
+
+function aLeakyFunction(a, b) {
+  leak += JSON.stringify([`${Math.random()}`.repeat(500000)])
+
+  return a + b
+}
+```
+
 ### Time based collection
 
 `memstat.record()`
