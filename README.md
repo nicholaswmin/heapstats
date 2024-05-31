@@ -2,7 +2,7 @@
 
 # memplot
 
-terminal-based [V8 heap allocation statistics][oilpan] plotter for unit-tests
+terminal-based [V8 heap allocation statistics][oilpan] / memory plotter for unit-tests
 
 ![Mocha test results showing an ASCII timeline plot of the memory usage][demo]
 
@@ -150,23 +150,20 @@ npm test
 
 ### Notes
 
-Only useful when you have (founded) concerns about the memory safety of
-somewhat critical code you're prototyping,
-otherwise it can make your unit tests [brittle][brittle-tests] and annoying. 
+This utility was built specifically to aid in quick decisions on whether a  
+unit-test of some code you're *currently* prototyping - is failing as a
+false-positive or just a quick n' dirty introspection about the runtime
+behaviour of some component/interaction you're currently designing of which
+you're unsure about the semantics of - I use it for [streams][streams] because
+they have just about a gazillion corner cases baked into them and have had
+committees over committee's change their semantics a billion times just in the
+past year.
 
-Memory leak testing is implicitly and probably more appropriately
-tested during full-scale load tests - not while unit testing.
+In *most* other cases, this, or any early low-level profiling, is probably
+*unnecessary*  and can end up turning your unit tests into a
+[brittle, flaky and annoying mess][brittle-tests] of randomly bitching unit-test
+failures depending on whether the sun is up or whether it's a Wednesday.
 
-It's almost impossible to discern a false positive from a false-negative
-when unit-testing for memory leaks, unless visually inspected, the plotter
-makes it somewhat tolerable in figuring out if a test failure is
-a false positive.
-
-Real memory leaks will usually demonstrate as a characteristic linearly
-increasing sawtooth pattern that outlive the invocation of the component.
-
-This module does nothing in helping figuring out where a memory leak is
-coming from, it's only purpose is to plot an allocation timeline.
 
 [More examples here][examples].
 
@@ -185,7 +182,7 @@ coming from, it's only purpose is to plot an allocation timeline.
 > furnished to do so.
 
 [nicholaswmin ]: https://github.com/nicholaswmin
-[test-workflow-badge]: https://github.com/nicholaswmin/memplot/actions/workflows/tests.yml/badge.svg
+[test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
 [ci-test]: https://github.com/nicholaswmin/memplot/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
 [mdn-perf-observe]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
