@@ -151,8 +151,11 @@ npm test
 ### Notes
 
 Only useful when you have (founded) concerns about the memory safety of
-somewhat critical code, otherwise it can make your unit tests [brittle][brittle-tests]
-and annoying.  
+somewhat critical code you're prototyping,
+otherwise it can make your unit tests [brittle][brittle-tests] and annoying. 
+
+Memory leak testing is implicitly and probably more appropriately
+tested during full-scale load tests - not while unit testing.
 
 It's almost impossible to discern a false positive from a false-negative
 when unit-testing for memory leaks, unless visually inspected, the plotter
