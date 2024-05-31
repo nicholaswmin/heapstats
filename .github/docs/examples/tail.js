@@ -1,4 +1,4 @@
-// creates a seesaw leak
+// Run in tail mode and observer a seesaw leak
 // start with `node tail.js --memstat`
 
 import Memstat from '../../../index.js'

@@ -143,4 +143,4 @@ npm test
 [tail-demo]: .github/docs/tail-demo.gif
 [mocha]: https://mochajs.org/
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318
-[examples]: .github/examples
+[examples]: .github/docs/examples
