@@ -22,3 +22,5 @@ jobs:
     - run: npm ci
     - run: npm test
     - run: npm audit
+      env:
+        NODE_ENV: test

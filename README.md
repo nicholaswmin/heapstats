@@ -2,7 +2,7 @@
 
 terminal-based heap allocation plotter for Node
 
-![A Mocha test run with a plot showing memory usage][preview]
+![Mocha test with an ASCII plot timeline of the memory usage][demo]
 
 ## Install
 
@@ -50,6 +50,27 @@ describe ('when run 100 times', function() {
 })
 ```
 
+## Watch mode
+
+To observe realtime heap statistics:
+
+```js
+import Memstat from 'memstat'
+
+Memstat({ watch: true })
+```
+
+which does this:
+
+![Animation showing live memory usage plotting in terminal][watch-demo]
+
+
+## Test
+
+```bash
+npm test
+```
+
 ### Notes
 
 - Make sure you [don't use arrow functions][no-mocha-arrow]   
@@ -74,5 +95,6 @@ Heap size is the value of [v8.getHeapStatistics()][v8-heap-doc]
 
 [wmin]: https://github.com/nicholaswmin
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
-[preview]: .github/docs/banner.png
+[demo]: .github/docs/demo.png
+[watch-demo]: .github/docs/watch-demo.gif
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318

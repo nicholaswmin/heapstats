@@ -4,14 +4,23 @@ import Memstat from '../index.js'
 chai.should()
 
 describe('#sample()', function() {
+  this.slow(500)
+
   beforeEach('setup memstat', function() {
     this.memstat = Memstat()
     this.nonLeakyFunction = function(a, b) {
-      return a ** b
+      return new Promise(res =>
+        setTimeout(() => res(a + b), 10))
     }
   })
 
   describe ('against a non-leaky function', function() {
+    it ('returns a correct result', async function() {
+      const res = await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
+
+      res.should.be.a('Number').equal(5)
+    })
+
     it ('reports a small initial heap size', async function() {
       for (let i = 0; i < 5; i++)
         await this.memstat.sample(() => this.nonLeakyFunction(2, 3))

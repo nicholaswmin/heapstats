@@ -1,7 +1,4 @@
 import asciichart from 'asciichart'
-import singleLineLog from 'single-line-log'
-
-import { suspendIO, restoreIO }  from './process-io.js'
 import plot from './plot.js'
 
 const bytesToMB = bytes => Math.ceil((bytes / 1024) / 1024)
@@ -13,22 +10,12 @@ const bytesToMB = bytes => Math.ceil((bytes / 1024) / 1024)
 const areEqualConsecutive = (point, i, arr) => i == 0 || point !== arr[i - 1]
 
 export default class Plot {
-  constructor({ initial = 0, watch, window }) {
-    this.watch = watch
+  constructor({ initial = 0, window }) {
     this.window = window
 
     this.snapshots = []
     this.initial = bytesToMB(initial)
     this.current = 0
-
-    if (this.watch) {
-      suspendIO()
-      this.observer = new PerformanceObserver((list, entries) => {
-        this.update()
-      })
-
-      this.observer.observe({ entryTypes: ['gc'] })
-    }
   }
 
   update({ snapshots, current, percentageIncrease }) {
@@ -36,18 +23,10 @@ export default class Plot {
     this.current = bytesToMB(current)
     this.percentageIncrease = percentageIncrease
 
-    if (this.watch)
-      singleLineLog.stdout(this.generate({ current, snapshots }))
-
     return this
   }
 
   end() {
-    if (this.watch) {
-      restoreIO()
-      this.observer.disconnect()
-    }
-
     return this
   }
 
@@ -57,7 +36,7 @@ export default class Plot {
 
     return plot(this.snapshots, {
       title: (opts.parent ? opts.parent.title : opts.title) || 'Heap size',
-      sublabels: [ 'Heap alloc. increased by: '+ this.percentageIncrease +'%' ],
+      sublabels: [ 'Heap alloc. size diff: '+ this.percentageIncrease +'%' ],
       lineLabels: [ 'heap size' ],
       xLabel: 'GC Cycles: ' + this.snapshots.length,
       yLabels: [
@@ -68,8 +47,8 @@ export default class Plot {
       min: 1,
       max: Math.ceil(20 + this.current * 1.25),
       margin: 1,
-      height: this.window.height,
-      width: this.window.width,
+      height: this.window.rows,
+      width: this.window.columns,
       hideXLabel: true,
       colors: [ opts.state === 'failed' ? asciichart.red : asciichart.green ]
     })

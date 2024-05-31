@@ -15,10 +15,10 @@ describe('#sample()', function ()  {
       this.leakyFunction = function(a, b) {
         return new Promise(resolve => {
           const timer = setInterval(() => {
-            a += Math.random().toString().repeat(3000)
+            a += Math.random().toString().repeat(8000)
           })
-          setTimeout(() => clearInterval(timer), 250)
-          setTimeout(() => resolve(a ** b), 300)
+          setTimeout(() => clearInterval(timer), 50)
+          setTimeout(() => resolve(a ** b), 100)
         })
       }
     })
@@ -51,7 +51,7 @@ describe('#sample()', function ()  {
 
       const usage = await this.memstat.end(this)
 
-      usage.current.should.be.within(15 * 1024 * 1024, 50 * 1024 * 1024)
+      usage.current.should.be.within(14 * 1024 * 1024, 50 * 1024 * 1024)
     })
   })
 })

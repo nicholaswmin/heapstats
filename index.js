@@ -9,14 +9,16 @@ import v8 from 'node:v8'
 import vm from 'node:vm'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { PerformanceObserver } from 'node:perf_hooks'
+import singleLineLog from 'single-line-log'
 
+import { suspendIO, restoreIO }  from './process-io.js'
 import Plot from './plot/index.js'
 
 v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
 class Memstat {
-  constructor({ watch = false, window = {}, ctx = null } = {}) {
+  constructor({ watch = false, window = {}, ctx = null, updateMs = 100 } = {}) {
     this.watch = watch
     this.window = window
     this.ctx = ctx
@@ -31,6 +33,11 @@ class Memstat {
       window: this.window
     })
 
+    if (this.watch) {
+      this.observer = new PerformanceObserver(() => this.update().redrawPlot())
+      this.observer.observe({ entryTypes: ['gc'] })
+      suspendIO()
+    }
     this.update()
   }
 
@@ -52,15 +59,27 @@ class Memstat {
 
     global.gc()
 
-    if (ctx) {
-      ctx.test.on('end', () => {
-        console.log('END')
-        console.log(this.plot.generate(ctx?.test))
-      })
-    }
+    if (ctx?.test)
+      this._schedulePlotDraw(ctx.test)
 
     return new Promise(resolve =>
-      process.nextTick(resolve(this.getReport())))
+      process.nextTick(() => resolve(this.getReport())))
+  }
+
+  _schedulePlotDraw(test) {
+    setTimeout(() => {
+      if (!['failed'].includes(test.state))
+        return
+
+      console.log(this.plot.generate({
+        ...test,
+        ...this.getStats()
+      }))
+    })
+  }
+
+  redrawPlot() {
+    singleLineLog.stdout(this.plot.generate(this.getStats()))
   }
 
   // private
@@ -72,6 +91,12 @@ class Memstat {
     this.plot.update(this.getStats())
 
     return this
+  }
+
+  exitWatchMode() {
+    this.observer.disconnect()
+    clearInterval(this.redrawCycle)
+    restoreIO()
   }
 
   // private
@@ -114,8 +139,10 @@ class Memstat {
 }
 
 export default opts => new Memstat({
+  watch: opts?.watch || false,
   window: {
-    width: process.stdout.columns - 5,
-    height: process.stdout.rows - 5
-  }
+    columns: process.stdout.columns - 25,
+    rows: process.stdout.rows - 20
+  },
+  ...opts
 })
