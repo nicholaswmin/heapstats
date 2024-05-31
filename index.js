@@ -17,7 +17,7 @@ v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
 class Memstat {
-  constructor({ tail = false, window = {}, ctx = null, updateMs = 100 } = {}) {
+  constructor({ tail = false, window = {}, ctx = null } = {}) {
     this.tail = tail
     this.window = window
     this.ctx = ctx
