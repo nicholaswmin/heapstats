@@ -4,7 +4,7 @@ import Memstat from '../index.js'
 chai.should()
 
 describe('#sample()', function ()  {
-  this.timeout(5000).slow(4000)
+  this.slow(1500)
 
   beforeEach('setup memstat', function() {
     this.memstat = Memstat()
