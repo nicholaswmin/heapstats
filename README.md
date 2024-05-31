@@ -32,12 +32,10 @@ console.log(usage.plot)
 // print memory usage stats (in bytes)
 console.log(usage)
 /*
-  {
-    initial: 4571944, // heat at start
-    current: 19229872, // heap size now
-    percentageIncrease: 320, // increase between initial - now
-    snapshots: [19229872, 22245871, 32186573, ....] // snapshots
-  }
+  initial: 4571944, // heat at start
+  current: 19229872, // heap size now
+  percentageIncrease: 320, // increase between initial - now
+  snapshots: [19229872, 22245871, 32186573, ....] // snapshots
 */
 ```
 
