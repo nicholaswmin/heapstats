@@ -2,7 +2,7 @@
 
 # memstat
 
-terminal-based heap allocation plotter for Node
+terminal-based [heap allocation][oilpan] plotter for Node
 
 ![Mocha test with an ASCII plot timeline of the memory usage][demo]
 
@@ -159,6 +159,7 @@ setTimeout(() => clearInterval(timer), 5000)
 [test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
 [ci-test]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
+[oilpan]: https://v8.dev/blog/oilpan-library
 [demo]: .github/docs/demo.png
 [tail-demo]: .github/docs/tail-demo.gif
 [mocha]: https://mochajs.org/
