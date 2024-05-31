@@ -1,6 +1,6 @@
 import chai from 'chai'
 
-import Heapstat from '../../index.js'
+import Heapstats from '../../index.js'
 import { leaky, clearLeaks } from '../leaky.js'
 
 chai.should()
@@ -20,23 +20,23 @@ describe('#record()', function ()  {
     })
 
     before('collect stats across 2 separate leaks', async function() {
-      this.heapstat = Heapstat()
+      this.heapstats = Heapstats()
 
-      await this.heapstat.record()
+      await this.heapstats.record()
 
-      this.reportA = await this.heapstat.getStats()
+      this.reportA = await this.heapstats.getStats()
 
       for (let i = 0; i < 5; i++)
         await this.leakyFunction({ mb: 10 })
 
-      this.reportB = await this.heapstat.getStats()
+      this.reportB = await this.heapstats.getStats()
 
       for (let i = 0; i < 5; i++)
         await this.leakyFunction({ mb: 20 })
 
-      this.reportC = await this.heapstat.getStats()
+      this.reportC = await this.heapstats.getStats()
 
-      await this.heapstat.end()
+      await this.heapstats.end()
     })
 
     it ('records the same small initial in all checkpoints', function() {

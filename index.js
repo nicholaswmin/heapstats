@@ -15,7 +15,7 @@ import plot from './src/plot/index.js'
 v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
-class Heapstat {
+class Heapstats {
   constructor({ tail = false, window = {} } = {}) {
     this.tail = tail
     this.window = window
@@ -161,10 +161,10 @@ const window = {
   rows: process.stdout.rows - 20
 }
 
-if (process.argv.some(arg => arg.includes('--heapstat'))) {
-  new Heapstat({ tail: true, window })
+if (process.argv.some(arg => arg.includes('--heapstats'))) {
+  new Heapstats({ tail: true, window })
 }
 
-export default opts => new Heapstat({
+export default opts => new Heapstats({
   tail: opts?.tail || false, window, ...opts
 })

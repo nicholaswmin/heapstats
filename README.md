@@ -1,6 +1,6 @@
 [![test-workflow][test-workflow-badge]][ci-test]
 
-# heapstat
+# heapstats
 
 terminal-based [V8 heap allocation stats][oilpan] plotter
 
@@ -9,25 +9,25 @@ terminal-based [V8 heap allocation stats][oilpan] plotter
 ## Install
 
 ```bash
-npm i git+ssh://git@github.com:nicholaswmin/heapstat.git
+npm i git+ssh://git@github.com:nicholaswmin/heapstats.git
 ```
 
 ## Usage
 
-`heapstat.sample(() => fn())`
+`heapstats.sample(() => fn())`
 
 Runs a potentially leaky function 100 times,
 then plots the allocation timeline:
 
 ```js
-import Heapstat from 'heapstat'
+import Heapstats from 'heapstats'
 
-const heapstat = Heapstat()
+const heapstats = Heapstats()
 
 for (let i = 0; i < 100; i++)
-  await heapstat.sample(() => leakyFunction())
+  await heapstats.sample(() => leakyFunction())
 
-const usage = await heapstat.end()
+const usage = await heapstats.end()
 
 console.log(usage.plot)
 ```
@@ -46,12 +46,12 @@ function aLeakyFunction(a, b) {
 
 ### Time based collection
 
-`heapstat.record()`
+`heapstats.record()`
 
 ```js
 app.get('/users', (req, res) => {
-  const heapstat = Heapstat()
-  await heapstat.record()
+  const heapstats = Heapstats()
+  await heapstats.record()
 
   for (let i = 0; i < 200; i++)
     await leakyFunction('leak')
@@ -60,7 +60,7 @@ app.get('/users', (req, res) => {
 
   res.json({ foo: 'bar' })
 
-  console.log(await heapstat.getStats())
+  console.log(await heapstats.getStats())
 })
 ```
 
@@ -71,7 +71,7 @@ Read: [MDN: PerformanceObserver][mdn-perf-observer]
 
 ### Additional stats
 
-Apart from the ASCII plot, `heapstat.end()` returns:
+Apart from the ASCII plot, `heapstats.end()` returns:
 
 ```js
 console.log(usage)
@@ -91,20 +91,20 @@ return by [v8.getHeapStatistics()][v8-heap-doc]
 
 This tool was made for integration into a testing suite.
 
-In [Mocha][mocha], you can pass the test context to `heapstat.end(this)` and
+In [Mocha][mocha], you can pass the test context to `heapstats.end(this)` and
 the plot will draw on failed tests on it's own.
 
 ```js
 describe ('when the function is run 100 times', function() {
   before('setup test', function() {
-    this.heapstat = Heapstat()
+    this.heapstats = Heapstats()
   })
 
   it ('does not leak memory', async function() {
     for (let i = 0; i < 200; i++)
-      await this.heapstat.sample(() => leakyFunction(2, 3))
+      await this.heapstats.sample(() => leakyFunction(2, 3))
 
-    const usage = this.heapstat.end(this) // pass this
+    const usage = this.heapstats.end(this) // pass this
 
     expect(usage.percentageIncrease).to.be.below(10)
     expect(usage.current).to.be.below(1024 * 1024 * 100)
@@ -116,7 +116,7 @@ describe ('when the function is run 100 times', function() {
 
 Non-mocha test frameworks can pass a test context like so:
 
-`this.heapstat.end({ test: { title: 'A whatever test', state: 'failed' }})`
+`this.heapstats.end({ test: { title: 'A whatever test', state: 'failed' }})`
 
 
 ### Tail mode
@@ -124,13 +124,13 @@ Non-mocha test frameworks can pass a test context like so:
 To observe realtime heap statistics:
 
 ```js
-import Heapstat from 'heapstat'
+import Heapstats from 'heapstats'
 ```
 
-and start with flag `--heapstat`, i.e:
+and start with flag `--heapstats`, i.e:
 
 ```bash
-node app.js --heapstat
+node app.js --heapstats
 ```
 
 which does this:
@@ -183,8 +183,8 @@ failures depending on whether the sun is up or whether it's a Wednesday.
 
 [nicholaswmin ]: https://github.com/nicholaswmin
 [test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
-[ci-test]: https://github.com/nicholaswmin/heapstat/actions/workflows/tests.yml
-[v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
+[ci-test]: https://github.com/nicholaswmin/heapstats/actions/workflows/tests.yml
+[v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatsistics
 [mdn-perf-observe]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
 [oilpan]: https://v8.dev/blog/oilpan-library
 [demo]: .github/docs/demo.png

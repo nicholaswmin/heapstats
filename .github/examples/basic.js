@@ -1,8 +1,8 @@
 // Run in tail mode and observer a seesaw leak
-// start with `node tail.js --heapstat`
+// start with `node tail.js --heapstats`
 
 import { leaky } from '../../test/leaky.js'
-import Heapstat from '../../index.js'
+import Heapstats from '../../index.js'
 
 let leak = ''
 function aLeakyFunction(a, b) {
@@ -11,11 +11,11 @@ function aLeakyFunction(a, b) {
   return a + b
 }
 
-const heapstat = Heapstat()
+const heapstats = Heapstats()
 
 for (let i = 0; i < 20; i++)
-  await heapstat.sample(() => aLeakyFunction({ mb: 1 }))
+  await heapstats.sample(() => aLeakyFunction({ mb: 1 }))
 
-const usage = await heapstat.end()
+const usage = await heapstats.end()
 
 console.log(usage.plot)

@@ -2,7 +2,7 @@
 // Run with `mocha mocha-leaky.js --no-package --exit`
 
 import chai from 'chai'
-import Heapstat from '../../index.js'
+import Heapstats from '../../index.js'
 
 chai.should()
 
@@ -11,9 +11,9 @@ function nonLeakyFunction() {
 }
 
 describe('memory usage profile', function() {
-  beforeEach('setup heapstat', function() {
+  beforeEach('setup heapstats', function() {
     this.leak = []
-    this.heapstat = Heapstat()
+    this.heapstats = Heapstats()
   })
 
   // this test will pass
@@ -21,9 +21,9 @@ describe('memory usage profile', function() {
     // avoid arrow functions in Mocha
 
     for (let i = 0; i < 30; i++)
-      await this.heapstat.sample(() => nonLeakyFunction())
+      await this.heapstats.sample(() => nonLeakyFunction())
 
-    const usage = await this.heapstat.end(this) // pass this here
+    const usage = await this.heapstats.end(this) // pass this here
 
     usage.increasePercentage.should.be.within(0, 5)
   })
