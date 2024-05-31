@@ -60,7 +60,7 @@ To observe realtime heap statistics:
 import Memstat from 'memstat'
 ```
 
-and start with flag '--memstat', i.e:
+and start with flag `--memstat`, i.e:
 
 ```bash
 node app.js --memstat
@@ -79,8 +79,7 @@ npm test
 ### Notes
 
 - [Don't use arrow functions][no-mocha-arrow] in Mochas `describe`/`it`,
-  otherwise `this` will be rescoped.  
-  Using arrow functions in Mocha is in fact discouraged in general.  
+  otherwise `this` will be rescoped.
 - Make sure you `await memstat.sample(() => functionUnderTest())`
 
 Heap size is the value of [v8.getHeapStatistics()][v8-heap-doc]
