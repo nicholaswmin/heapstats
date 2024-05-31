@@ -161,7 +161,6 @@ class Memstat {
 }
 
 if (process.argv.some(arg => arg.includes('--memstat'))) {
-  console.log('passed')
   new Memstat({
     tail: true,
     window: {
