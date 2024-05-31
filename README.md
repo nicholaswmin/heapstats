@@ -74,16 +74,16 @@ Apart from the ASCII plot, `memstat.end()` returns:
 ```js
 console.log(usage)
 /*
-  initial: 9920688, // heap size bytes on instantiation
-  current: 9936184, // current heap size bytes
-  max: 9936184, // maximum size of allocated heap,
+  initial: 16863610, // heap size bytes on instantiation
+  current: 86857600, // current heap size bytes
+  max: 104857600, // maximum size of allocated heap at any point,
   increasePercentage: 2.4, // difference of current and initial, expressed in %
   stats: [V8HeapStats, V8HeapStats, V8HeapStats...] // collected stats
 */
 ```
 
-`V8HeapStats` is an object containing heap allocation details and statistics   
-returned by [v8.getHeapStatistics()][v8-heap-doc]
+Where `V8HeapStats` is an object containing heap allocation statistics, as
+return by [v8.getHeapStatistics()][v8-heap-doc]
 
 ### As a unit-testing utility
 
@@ -135,10 +135,10 @@ which does this:
 
 ![GIF showing realtime memory usage as a line plot, in terminal][tail-demo]
 
-Note that while live mode is pinned, any output to `stdout`/`stderr`
-is suppressed to avoid interfering with the redraw of the plot.
+Note that while the tail mode is pinned, any output to `stdout`/`stderr`
+is suppressed to avoid interference with the plot redraw cycle.
 
-In other words logging won't work while the plot is tailing.
+In other words `console.log`/`err` etc.. won't work while the plot is tailing.
 
 ## Test
 
