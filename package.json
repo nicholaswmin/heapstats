@@ -18,10 +18,9 @@
     ]
   },
   "keywords": [
-    "memory",
+    "garbage-collector",
     "memory-leak",
     "mocha",
-    "unit-test",
     "nodejs"
   ],
   "author": "@nicholaswmin",
