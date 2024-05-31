@@ -14,7 +14,7 @@ npm i git+ssh://git@github.com:nicholaswmin/memstat.git
 
 ## Usage
 
-`memstat.sample(() => fn)`
+`memstat.sample(() => fn())`
 
 Run a potentially leaky function 100 times,
 then plot the allocation timeline:
