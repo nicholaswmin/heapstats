@@ -4,11 +4,10 @@ import Memstat from '../../index.js'
 
 chai.should()
 
+const mbToBytes = mb => Math.ceil(mb * 1024 * 1024)
+
 describe('#sample()', function() {
   this.slow(500)
-
-  const mbInBytes = mb => Math.ceil(mb * 1024 * 1024)
-  const bytesInMb = bytes => Math.ceil(bytes / 1024 / 1024)
 
   beforeEach('setup memstat', function() {
     this.memstat = Memstat()
@@ -21,7 +20,7 @@ describe('#sample()', function() {
   })
 
   describe ('against a non-leaky function', function() {
-    it ('returns a correct result', async function() {
+    it ('returns the result of the function', async function() {
       const res = await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
 
       res.should.be.a('Number').equal(5)
@@ -35,7 +34,7 @@ describe('#sample()', function() {
 
       const usage = await this.memstat.end(this)
 
-      usage.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      usage.initial.should.be.within(mbToBytes(5), mbToBytes(15))
     })
 
     it('records no significant percentage increase', async function() {
@@ -57,7 +56,7 @@ describe('#sample()', function() {
 
       const usage = await this.memstat.end(this)
 
-      usage.current.should.be.within(mbInBytes(5), mbInBytes(15))
+      usage.current.should.be.within(mbToBytes(5), mbToBytes(15))
     })
   })
 })

@@ -2,9 +2,9 @@
 
 # memstat
 
-terminal-based [V8 heap allocation][oilpan] plotter for Node
+terminal-based [V8 heap allocation][oilpan] plotter for unit-tests
 
-![Mocha test with an ASCII plot timeline of the memory usage][demo]
+![Mocha test results showing an ASCII timeline plot of the memory usage][demo]
 
 ## Install
 
@@ -111,6 +111,11 @@ describe ('when the function is run 100 times', function() {
   // ... rest of tests
 })
 ```
+
+Non-mocha test frameworks can pass a test context like so:
+
+`this.memstat.end({ test: { title: 'A whatever test', state: 'failed' }})`
+
 
 ### Tail mode
 

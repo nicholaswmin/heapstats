@@ -5,11 +5,10 @@ import { leaky, clearLeaks } from '../leaky.js'
 
 chai.should()
 
+const mbToBytes = mb => Math.ceil(mb * 1024 * 1024)
+
 describe('#sample()', function ()  {
   this.timeout(4000).slow(2500)
-
-  const mbInBytes = mb => Math.ceil(mb * 1024 * 1024)
-  const bytesInMb = bytes => Math.ceil(bytes / 1024 / 1024)
 
   describe ('against a leaky function', function() {
     before(function() {
@@ -28,7 +27,7 @@ describe('#sample()', function ()  {
 
       const usage = await this.memstat.end(this)
 
-      usage.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      usage.initial.should.be.within(mbToBytes(5), mbToBytes(15))
     })
 
     it ('records a significant increase percentage', async function() {
@@ -58,7 +57,7 @@ describe('#sample()', function ()  {
 
       const usage = await this.memstat.end(this)
 
-      usage.current.should.be.within(mbInBytes(75), mbInBytes(125))
+      usage.current.should.be.within(mbToBytes(75), mbToBytes(125))
     })
   })
 })

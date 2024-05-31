@@ -70,7 +70,7 @@ class Memstat {
   getStats() {
     return {
       ...this._getStats(),
-      stats: [this.stats],
+      stats: this.stats,
       plot: plot(this._getStats())
     }
   }
