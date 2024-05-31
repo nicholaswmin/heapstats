@@ -79,16 +79,21 @@ the plot will draw on failed tests:
 
 ```js
 describe ('when the function is run 100 times', function() {
+  before('setup test', function() {
+    this.memstat = Memstat()
+  })
 
   it ('does not leak memory', async function() {
     for (let i = 0; i < 200; i++)
-      await memstat.sample(() => leakyFunction(2, 3))
+      await this.memstat.sample(() => leakyFunction(2, 3))
 
-    const usage = memstat.end(this) // pass this
+    const usage = this.memstat.end(this) // pass this
 
     expect(usage.percentageIncrease).to.be.below(10)
     expect(usage.current).to.be.below(1024 * 1024 * 100)
   })
+
+  // ... rest of tests
 })
 ```
 
