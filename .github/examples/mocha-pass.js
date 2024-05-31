@@ -2,7 +2,7 @@
 // Run with `mocha mocha-leaky.js --no-package --exit`
 
 import chai from 'chai'
-import Memstat from '../../../index.js'
+import Memstat from '../../index.js'
 
 chai.should()
 
@@ -25,6 +25,6 @@ describe('memory usage profile', function() {
 
     const usage = await this.memstat.end(this) // pass this here
 
-    usage.percentageIncrease.should.be.within(0, 5)
+    usage.increasePercentage.should.be.within(0, 5)
   })
 })

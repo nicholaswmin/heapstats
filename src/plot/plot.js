@@ -142,7 +142,7 @@ export default function plot(yArray, config = {}) {
 
   const xStartLabel = ' '.repeat(xLabelMargin) + config.xStartLabel
   const xLabel = config.xLabel ?
-    `\n${asciichart.darkgray}${xStartLabel}${config.xLabel.padStart(fullWidth - xStartLabel.length - 1)}${asciichart.reset}` :
+    `\n${asciichart.blue}${xStartLabel}${config.xLabel.padStart(fullWidth - xStartLabel.length - 1)}${asciichart.reset}` :
     '';
 
   return `*\n${title}${yLabel}${plot}\n${ticks}\n${xLabel}\n${' '.repeat(xLabelMargin)}\n`;

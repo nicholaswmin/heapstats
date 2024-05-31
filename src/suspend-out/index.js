@@ -1,4 +1,4 @@
-// # Process IO
+// # Suspend stdout/stderr
 //
 // Monkey patches `stdio`/`stderr`, otherwise anything writing to the
 // terminal, will throw off a live-updating single line ASCII plot
@@ -51,14 +51,14 @@ const writeErr = function () {
     buffer.push({ dest: 'stderr', val: arguments[0] })
 }
 
-const suspendIO = () => {
+const suspendOut = () => {
   console.info('INFO: stdout/stderr writes are suspended...')
 
   process.stdout.write = writeOut
   process.stderr.write = writeErr
 }
 
-const restoreIO = () => {
+const restoreOut = () => {
   process.stdout.write = stdoutFn
   process.stderr.write = stderrFn
 
@@ -72,4 +72,4 @@ const restoreIO = () => {
   buffer = []
 }
 
-export { restoreIO, suspendIO }
+export { restoreOut, suspendOut }

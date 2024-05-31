@@ -1,17 +1,16 @@
 // V8/Oilpan Stats Collector
-// Collects heap snapshots from Garbage Collection compaction cycles
+// Collects heap statistics from Garbage Collection compaction cycles
 //
 // Authors: Nik Kyriakides
 // @nicholaswmin
 
 import v8 from 'node:v8'
 import vm from 'node:vm'
-import { setTimeout as sleep } from 'node:timers/promises'
 import { PerformanceObserver } from 'node:perf_hooks'
 import singleLineLog from 'single-line-log'
 
-import { suspendIO, restoreIO }  from './src/process-io/index.js'
-import Plot from './src/plot/index.js'
+import { suspendOut, restoreOut }  from './src/suspend-out/index.js'
+import plot from './src/plot/index.js'
 
 v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
@@ -22,20 +21,11 @@ class Memstat {
     this.window = window
     this.stopped = false
 
-    this.initial = v8.getHeapStatistics().used_heap_size
-    this.snapshots = [this.initial]
-    this.current = null
-
-    this.plot = new Plot({
-      initial: this.initial,
-      tail: this.tail,
-      window: this.window
-    })
+    this.stats = [v8.getHeapStatistics()]
 
     if (this.tail) {
-      suspendIO()
-      this.observer = new PerformanceObserver(() => this.update().redrawPlot())
-      this.observer.observe({ entryTypes: ['gc'] })
+      suspendOut()
+      this.observeGC(() => this.update().redrawPlot())
     }
     this.update()
   }
@@ -43,8 +33,7 @@ class Memstat {
   // for time-based recording
   record() {
     this.throwIfCannotStart()
-    this.observer = new PerformanceObserver(() => this.update())
-    this.observer.observe({ entryTypes: ['gc'] })
+    this.observeGC(() => this.update())
   }
 
   // public
@@ -52,24 +41,23 @@ class Memstat {
   async sample(cb) {
     this.update()
 
-    const res = await cb()
+    const result = await cb()
 
     this.update()
 
-    return res
+    return result
   }
 
   // public
   end(ctx) {
-    this.stop()
-
-    if (this.plot)
-      this.update().plot.end()
+    this.disconnectGCObserver()
 
     global.gc()
 
-    // draw on next event loop so test has a
-    // to actually fail
+    // in case we're in a Mocha test,
+    // we want to draw the plot on the *next event loop*
+    // since at this point we don't know if the test has passed/failed
+    // because it has not ended yet
     if (ctx?.test)
       this.schedulePlotDraw(ctx.test)
 
@@ -82,18 +70,19 @@ class Memstat {
   getStats() {
     return {
       ...this._getStats(),
-      plot: this.plot.generate()
+      stats: [this.stats],
+      plot: plot(this._getStats())
     }
   }
 
   // private
   redrawPlot() {
-    singleLineLog.stdout(this.plot.generate(this._getStats()))
+    singleLineLog.stdout(plot(this._getStats()))
   }
 
   exitTailMode() {
-    this.stop()
-    restoreIO()
+    this.disconnectGCObserver()
+    restoreOut()
   }
 
   // private
@@ -102,8 +91,9 @@ class Memstat {
       if (!['failed'].includes(test.state))
         return
 
-      console.log(this.plot.generate({
-        ...test,
+      console.log(plot({
+        title: `Test: ${test.parent ? test.parent.title : test.title}`,
+        failed: test?.state === 'failed',
         ...this._getStats()
       }))
     })
@@ -111,34 +101,40 @@ class Memstat {
 
   // private
   update() {
-    this.current = v8.getHeapStatistics().used_heap_size
-    this.snapshots.push(this.current)
-    this.plot.update(this._getStats())
+    this.stats.push(v8.getHeapStatistics())
 
     return this
   }
 
   // private
-  stop() {
+  disconnectGCObserver() {
     if (this.observer)
       this.observer.disconnect()
-
   }
 
-  // private
-  // creates stats for internal-use, i.e:
-  // plot drawing
+  observeGC(cb) {
+    this.observer = new PerformanceObserver(() => cb())
+    this.observer.observe({ entryTypes: ['gc'] })
+  }
+
   _getStats() {
+    const used_heap_sizes = this.stats.map(stat => stat.used_heap_size)
+
     return {
-      initial: this.initial,
-      snapshots: [ ...this.snapshots ],
-      current: this.current,
-      max: Math.max(...this.snapshots),
-      percentageIncrease: this.percDiffNum(this.initial, this.current)
+      points: used_heap_sizes,
+      initial: used_heap_sizes[0],
+      width: this.window.columns,
+      height: this.window.rows,
+      current: used_heap_sizes[used_heap_sizes.length - 1],
+      increasePercentage: this.calcPercDifference(
+        used_heap_sizes[0],
+        used_heap_sizes[used_heap_sizes.length - 1]
+      ),
+      max: Math.max(...used_heap_sizes)
     }
   }
 
-  percDiffNum(a, b) {
+  calcPercDifference(a, b) {
     let percent
 
     if (b !== 0) {
@@ -156,25 +152,19 @@ class Memstat {
 
   throwIfCannotStart() {
     if (this.stopped)
-      throw new Error('Cannot restart a stopped memstart. Create a new one.')
+      throw new Error('Cannot restart a stopped instance. Create a new one.')
   }
 }
 
+const window = {
+  columns: process.stdout.columns - 25,
+  rows: process.stdout.rows - 20
+}
+
 if (process.argv.some(arg => arg.includes('--memstat'))) {
-  new Memstat({
-    tail: true,
-    window: {
-      columns: process.stdout.columns - 25,
-      rows: process.stdout.rows - 20
-    }
-  })
+  new Memstat({ tail: true, window })
 }
 
 export default opts => new Memstat({
-  tail: opts?.tail || false,
-  window: {
-    columns: process.stdout.columns - 25,
-    rows: process.stdout.rows - 20
-  },
-  ...opts
+  tail: opts?.tail || false, window, ...opts
 })

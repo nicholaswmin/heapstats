@@ -13,24 +13,58 @@ describe('#memstat', function ()  {
   })
 
   describe ('#memstat.end()', function() {
-    it ('returns a statistics object', async function() {
-      await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
+    describe('Statistics collection', function() {
+      it ('returns a statistics object', async function() {
+        await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
 
-      const usage = await this.memstat.end(this)
-
-      usage.should.include.keys(['plot', 'initial', 'current', 'snapshots'])
-      usage.plot.should.be.a('String')
-      usage.initial.should.be.a('Number')
-      usage.current.should.be.a('Number')
-      usage.snapshots.should.be.an('Array')
+        const usage = await this.memstat.end(this)
+        usage.should.include.keys([
+          'plot',
+          'initial',
+          'current',
+          'stats',
+          'increasePercentage',
+          'max'
+        ])
+        usage.plot.should.be.a('String').with.length
+        usage.initial.should.be.a('Number').above(0)
+        usage.current.should.be.a('Number').above(0)
+        usage.max.should.be.a('Number').above(0)
+        usage.increasePercentage.should.be.a('Number')
+        usage.stats.should.be.an('Array').with.length.above(0)
+      })
     })
 
-    it ('returns an ASCII plot', async function() {
-      await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
+    describe('ASCII Plot', function() {
+      before(async function() {
+        await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
+        this.usage = await this.memstat.end(this)
+      })
 
-      const usage = await this.memstat.end(this)
+      it ('returns an ASCII plot', function() {
+        this.usage.plot.should.have.length.above(100)
+        this.usage.plot.should.include('heap')
+      })
 
-      usage.plot.should.have.length.above(100)
+      it ('has a default title', function() {
+        this.usage.plot.should.include('Heap Allocation Timeline')
+      })
+
+      it ('shows initial usage', function() {
+        this.usage.plot.should.include('Initial:')
+      })
+
+      it ('shows current usage', function() {
+        this.usage.plot.should.include('Cur:')
+      })
+
+      it ('shows max usage', function() {
+        this.usage.plot.should.include('Max:')
+      })
+
+      it ('shows number of GC cycles', function() {
+        this.usage.plot.should.include('GC Cycles:')
+      })
     })
   })
 })

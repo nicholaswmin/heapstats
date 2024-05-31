@@ -37,7 +37,7 @@ describe('#record()', function ()  {
 
       this.reportC = await this.memstat.getStats()
 
-      await this.memstat.stop()
+      await this.memstat.end()
     })
 
     it ('records the same small initial in all checkpoints', function() {

@@ -43,7 +43,7 @@ describe('#sample()', function ()  {
 
       const usage = await this.memstat.end(this)
 
-      usage.percentageIncrease.should.be.within(300, 600)
+      usage.increasePercentage.should.be.within(300, 600)
     })
 
     it ('records a significantly higher current heap size', async function() {

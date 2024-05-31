@@ -1,58 +1,39 @@
 import asciichart from 'asciichart'
 import plot from './plot.js'
 
-const bytesToMB = bytes => Math.ceil((bytes / 1024) / 1024)
+const bytesToMB = bytes => (bytes / 1024 / 1024).toFixed(2)
 
-// discard equal points if they are next to each other; consecutive.
-// i.e:
-// - `[1, 3, 3, 4, 4, 4, 1, 3]` becomes `[1, 3, 4, 1, 3]`
-// - we always make sure we keep first/last elements
-const areEqualConsecutive = (point, i, arr) => i == 0 || point !== arr[i - 1]
+export default ({
+  points = [],
+  initial = 0,
+  current = 0,
+  min = 1,
+  max = 100,
+  width = 60,
+  height = 20,
+  increasePercentage = 0,
+  failed = false,
+  title = 'Heap Allocation Timeline',
+  colors = true
+}) => {
+  points = points.map(bytesToMB)
 
-// @TODO Absolute 0 reason for this to be a class;
-// make it a pure function
-export default class Plot {
-  constructor({ initial = 0, window }) {
-    this.window = window
-
-    this.snapshots = []
-    this.initial = bytesToMB(initial)
-    this.current = 0
-  }
-
-  update({ snapshots, current, percentageIncrease }) {
-    this.snapshots = snapshots.map(bytesToMB).filter(areEqualConsecutive)
-    this.current = bytesToMB(current)
-    this.percentageIncrease = percentageIncrease
-
-    return this
-  }
-
-  end() {
-    return this
-  }
-
-  generate(opts) {
-    opts = opts || {}
-    const colors = typeof opts.colors !== 'undefined' ? opts.colors : true
-
-    return process.env.ENV_CI ? '+'.repeat(1000) : plot(this.snapshots, {
-      title: (opts.parent ? opts.parent.title : opts.title) || 'Heap size',
-      sublabels: [ 'Heap alloc. size diff: '+ this.percentageIncrease +'%' ],
-      lineLabels: [ 'heap size' ],
-      xLabel: 'GC Cycles: ' + this.snapshots.length,
-      yLabels: [
-        'Cur: ' + this.current + ' MB',
-        'Max: ' + Math.max(...this.snapshots) + ' MB'
-      ],
-      xStartLabel: 'Initial: ' + this.initial + ' MB',
-      min: 1,
-      max: Math.ceil(20 + this.current * 1.25),
-      margin: 1,
-      height: this.window.rows,
-      width: this.window.columns,
-      hideXLabel: true,
-      colors: [ opts.state === 'failed' ? asciichart.red : asciichart.green ]
-    })
-  }
+  return process.env.ENV_CI ? '+'.repeat(1000) : plot(points, {
+    title: title,
+    sublabels: [ 'Heap alloc. size diff: '+ increasePercentage +'%' ],
+    lineLabels: [ 'heap size' ],
+    xLabel: 'GC Cycles: ' + points.length,
+    yLabels: [
+      'Cur: ' + bytesToMB(current) + ' MB',
+      'Max: ' + bytesToMB(max) + ' MB'
+    ],
+    xStartLabel: 'Initial: ' + bytesToMB(initial) + ' MB',
+    hideXLabel: true,
+    colors: [ failed ? asciichart.red : asciichart.green ],
+    min: 1,
+    max: Math.ceil(30 + bytesToMB(initial) * 1.5),
+    margin: 1,
+    width,
+    height
+  })
 }
