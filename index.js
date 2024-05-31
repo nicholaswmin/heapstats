@@ -18,8 +18,8 @@ v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
 class Memstat {
-  constructor({ watch = false, window = {}, ctx = null, updateMs = 100 } = {}) {
-    this.watch = watch
+  constructor({ tail = false, window = {}, ctx = null, updateMs = 100 } = {}) {
+    this.tail = tail
     this.window = window
     this.ctx = ctx
 
@@ -29,11 +29,11 @@ class Memstat {
 
     this.plot = new Plot({
       initial: this.initial,
-      watch: this.watch,
+      tail: this.tail,
       window: this.window
     })
 
-    if (this.watch) {
+    if (this.tail) {
       this.observer = new PerformanceObserver(() => this.update().redrawPlot())
       this.observer.observe({ entryTypes: ['gc'] })
       suspendIO()
@@ -93,7 +93,7 @@ class Memstat {
     return this
   }
 
-  exitWatchMode() {
+  exitTailMode() {
     this.observer.disconnect()
     clearInterval(this.redrawCycle)
     restoreIO()
@@ -138,8 +138,19 @@ class Memstat {
   }
 }
 
+if (process.argv.some(arg => arg.includes('--memstat'))) {
+  console.log('passed')
+  new Memstat({
+    tail: true,
+    window: {
+      columns: process.stdout.columns - 25,
+      rows: process.stdout.rows - 20
+    }
+  })
+}
+
 export default opts => new Memstat({
-  watch: opts?.watch || false,
+  tail: opts?.tail || false,
   window: {
     columns: process.stdout.columns - 25,
     rows: process.stdout.rows - 20

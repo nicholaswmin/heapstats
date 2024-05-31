@@ -1,5 +1,5 @@
 // creates a seesaw leak
-// start with `node watch-mode.js`
+// start with `node tail.js --memstat`
 
 import Memstat from '../../../index.js'
 
@@ -8,11 +8,3 @@ setInterval(() => leak = [], 1000)
 setInterval(() =>
   leak.push(JSON.stringify(Math.random().toString().repeat(1000)), 20)
 )
-
-Memstat({
-  watch: true,
-  window: {
-    columns: process.stdout.columns - 25,
-    rows: process.stdout.rows - 15
-  }
-})

@@ -33,10 +33,10 @@ console.log(usage.snapshots) // [10000, 12340, 13100, ....]
 
 ### Mocha
 
-This is made for Mocha tests.
+This was made for unit testing.
 
-Pass the test context (`this`) to `memstat.end()` and the plot will draw on
-failed tests:
+In [Mocha][mocha], you can pass the test context to `memstat.end(this)` and
+the plot will draw on failed tests:
 
 ```js
 describe ('when run 100 times', function() {
@@ -44,28 +44,31 @@ describe ('when run 100 times', function() {
     for (let i = 0; i < 200; i++)
       await memstat.sample(() => leakyFunction(2, 3))
 
-    const usage = memstat.end(this)
+    const usage = memstat.end(this) // pass this
 
     expect(usage.percentageIncrease).to.be.below(10)
-    expect(usage.current).to.be.below(1024 * 1024 * 100) // 100 MB
+    expect(usage.current).to.be.below(1024 * 1024 * 100)
   })
 })
 ```
 
-## Watch mode
+## Tail mode
 
 To observe realtime heap statistics:
 
 ```js
 import Memstat from 'memstat'
+```
 
-Memstat({ watch: true })
+and start with flag '--memstat', i.e:
+
+```bash
+node app.js --memstat
 ```
 
 which does this:
 
-![Animation showing live memory usage plotting in terminal][watch-demo]
-
+![Animation showing live memory usage plotting in terminal][tail-demo]
 
 ## Test
 
@@ -75,9 +78,9 @@ npm test
 
 ### Notes
 
-- Make sure you [don't use arrow functions][no-mocha-arrow]   
-  in `describe`/`it`, otherwise `this` will be undefined.
-  Using arrow functions in Mocha is in fact discouraged.  
+- [Don't use arrow functions][no-mocha-arrow] in Mochas `describe`/`it`,
+  otherwise `this` will be rescoped.  
+  Using arrow functions in Mocha is in fact discouraged in general.  
 - Make sure you `await memstat.sample(() => functionUnderTest())`
 
 Heap size is the value of [v8.getHeapStatistics()][v8-heap-doc]
@@ -100,5 +103,6 @@ Heap size is the value of [v8.getHeapStatistics()][v8-heap-doc]
 [ci-test]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
 [demo]: .github/docs/demo.png
-[watch-demo]: .github/docs/watch-demo.gif
+[tail-demo]: .github/docs/tail-demo.gif
+[mocha]: https://mochajs.org/
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318
