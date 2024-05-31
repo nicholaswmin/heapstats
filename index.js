@@ -15,7 +15,7 @@ import plot from './src/plot/index.js'
 v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
-class Memstat {
+class Memplot {
   constructor({ tail = false, window = {} } = {}) {
     this.tail = tail
     this.window = window
@@ -161,10 +161,10 @@ const window = {
   rows: process.stdout.rows - 20
 }
 
-if (process.argv.some(arg => arg.includes('--memstat'))) {
-  new Memstat({ tail: true, window })
+if (process.argv.some(arg => arg.includes('--memplot'))) {
+  new Memplot({ tail: true, window })
 }
 
-export default opts => new Memstat({
+export default opts => new Memplot({
   tail: opts?.tail || false, window, ...opts
 })

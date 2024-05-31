@@ -4,7 +4,7 @@
 //
 import http from 'node:http'
 
-import Memstat from '../../index.js'
+import Memplot from '../../index.js'
 import { leaky } from '../../test/leaky.js'
 
 const server = http.createServer(async (req, res) => {
@@ -12,9 +12,9 @@ const server = http.createServer(async (req, res) => {
     if (req.url === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html' })
 
-      const memstat = Memstat()
+      const memplot = Memplot()
 
-      memstat.record()
+      memplot.record()
 
       for (let i = 0; i < 10; i++) {
         await leaky({ mb: 50, timeout: 300 })
@@ -22,7 +22,7 @@ const server = http.createServer(async (req, res) => {
         res.write(`<h4> Hi! I computed ${i + 1} out of 10 operations.</h4>`)
       }
 
-      const endUsage = await memstat.end()
+      const endUsage = await memplot.end()
 
       console.log(endUsage.plot)
 

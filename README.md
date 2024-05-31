@@ -1,33 +1,33 @@
 [![test-workflow][test-workflow-badge]][ci-test]
 
-# memstat
+# memplot
 
-terminal-based [V8 heap allocation][oilpan] plotter for unit-tests
+terminal-based [V8 heap allocation statistics][oilpan] plotter for unit-tests
 
 ![Mocha test results showing an ASCII timeline plot of the memory usage][demo]
 
 ## Install
 
 ```bash
-npm i git+ssh://git@github.com:nicholaswmin/memstat.git
+npm i git+ssh://git@github.com:nicholaswmin/memplot.git
 ```
 
 ## Usage
 
-`memstat.sample(() => fn())`
+`memplot.sample(() => fn())`
 
-Run a potentially leaky function 100 times,
-then plot the allocation timeline:
+Runs a potentially leaky function 100 times,
+then plots the allocation timeline:
 
 ```js
-import Memstat from 'memstat'
+import Memplot from 'memplot'
 
-const memstat = Memstat()
+const memplot = Memplot()
 
 for (let i = 0; i < 100; i++)
-  await memstat.sample(() => leakyFunction())
+  await memplot.sample(() => leakyFunction())
 
-const usage = await memstat.end()
+const usage = await memplot.end()
 
 console.log(usage.plot)
 ```
@@ -46,12 +46,12 @@ function aLeakyFunction(a, b) {
 
 ### Time based collection
 
-`memstat.record()`
+`memplot.record()`
 
 ```js
 app.get('/users', (req, res) => {
-  const memstat = Memstat()
-  await memstat.record()
+  const memplot = Memplot()
+  await memplot.record()
 
   for (let i = 0; i < 200; i++)
     await leakyFunction('leak')
@@ -60,17 +60,18 @@ app.get('/users', (req, res) => {
 
   res.json({ foo: 'bar' })
 
-  console.log(await memstat.getStats())
+  console.log(await memplot.getStats())
 })
 ```
 
-> NOTE: really "time-based".
-> Strictly speaking; it's collected immediately following a garbage   
-> collection cycle.
+> NOTE: Not really "time-based", strictly speaking it's collected
+> immediately following a garbage collection/compaction cycle.
+
+Read: [MDN: PerformanceObserver][mdn-perf-observer]
 
 ### Additional stats
 
-Apart from the ASCII plot, `memstat.end()` returns:
+Apart from the ASCII plot, `memplot.end()` returns:
 
 ```js
 console.log(usage)
@@ -90,20 +91,20 @@ return by [v8.getHeapStatistics()][v8-heap-doc]
 
 This tool was made for integration into a testing suite.
 
-In [Mocha][mocha], you can pass the test context to `memstat.end(this)` and
+In [Mocha][mocha], you can pass the test context to `memplot.end(this)` and
 the plot will draw on failed tests on it's own.
 
 ```js
 describe ('when the function is run 100 times', function() {
   before('setup test', function() {
-    this.memstat = Memstat()
+    this.memplot = Memplot()
   })
 
   it ('does not leak memory', async function() {
     for (let i = 0; i < 200; i++)
-      await this.memstat.sample(() => leakyFunction(2, 3))
+      await this.memplot.sample(() => leakyFunction(2, 3))
 
-    const usage = this.memstat.end(this) // pass this
+    const usage = this.memplot.end(this) // pass this
 
     expect(usage.percentageIncrease).to.be.below(10)
     expect(usage.current).to.be.below(1024 * 1024 * 100)
@@ -115,7 +116,7 @@ describe ('when the function is run 100 times', function() {
 
 Non-mocha test frameworks can pass a test context like so:
 
-`this.memstat.end({ test: { title: 'A whatever test', state: 'failed' }})`
+`this.memplot.end({ test: { title: 'A whatever test', state: 'failed' }})`
 
 
 ### Tail mode
@@ -123,13 +124,13 @@ Non-mocha test frameworks can pass a test context like so:
 To observe realtime heap statistics:
 
 ```js
-import Memstat from 'memstat'
+import Memplot from 'memplot'
 ```
 
-and start with flag `--memstat`, i.e:
+and start with flag `--memplot`, i.e:
 
 ```bash
-node app.js --memstat
+node app.js --memplot
 ```
 
 which does this:
@@ -139,7 +140,7 @@ which does this:
 Note that while the tail mode is pinned, any output to `stdout`/`stderr`
 is suppressed to avoid interference with the plot redraw cycle.
 
-In other words `console.log`/`err` etc.. won't work while the plot is tailing.
+In other words `console.log`/`err` etc won't work while the plot is tailing.
 
 ## Test
 
@@ -149,9 +150,20 @@ npm test
 
 ### Notes
 
-- [Avoid arrow functions][no-mocha-arrow] in Mochas `describe`/`it`,
-  otherwise `this` will refer to the wrong scope.
-- Make sure you `await memstat.sample(() => functionUnderTest())`
+Only useful when you have (founded) concerns about the memory safety of
+somewhat critical code, otherwise it can make your unit tests [brittle][brittle-tests]
+and annoying.  
+
+It's almost impossible to discern a false positive from a false-negative
+when unit-testing for memory leaks, unless visually inspected, the plotter
+makes it somewhat tolerable in figuring out if a test failure is
+a false positive.
+
+Real memory leaks will usually demonstrate as a characteristic linearly
+increasing sawtooth pattern that outlive the invocation of the component.
+
+This module does nothing in helping figuring out where a memory leak is
+coming from, it's only purpose is to plot an allocation timeline.
 
 [More examples here][examples].
 
@@ -170,12 +182,14 @@ npm test
 > furnished to do so.
 
 [nicholaswmin ]: https://github.com/nicholaswmin
-[test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
-[ci-test]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml
+[test-workflow-badge]: https://github.com/nicholaswmin/memplot/actions/workflows/tests.yml/badge.svg
+[ci-test]: https://github.com/nicholaswmin/memplot/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
+[mdn-perf-observe]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
 [oilpan]: https://v8.dev/blog/oilpan-library
 [demo]: .github/docs/demo.png
 [tail-demo]: .github/docs/tail-demo.gif
 [mocha]: https://mochajs.org/
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318
 [examples]: .github/examples
+[brittle-tests]: https://abseil.io/resources/swe-book/html/ch12.html

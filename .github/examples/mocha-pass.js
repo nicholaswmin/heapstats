@@ -2,7 +2,7 @@
 // Run with `mocha mocha-leaky.js --no-package --exit`
 
 import chai from 'chai'
-import Memstat from '../../index.js'
+import Memplot from '../../index.js'
 
 chai.should()
 
@@ -11,9 +11,9 @@ function nonLeakyFunction() {
 }
 
 describe('memory usage profile', function() {
-  beforeEach('setup memstat', function() {
+  beforeEach('setup memplot', function() {
     this.leak = []
-    this.memstat = Memstat()
+    this.memplot = Memplot()
   })
 
   // this test will pass
@@ -21,9 +21,9 @@ describe('memory usage profile', function() {
     // avoid arrow functions in Mocha
 
     for (let i = 0; i < 30; i++)
-      await this.memstat.sample(() => nonLeakyFunction())
+      await this.memplot.sample(() => nonLeakyFunction())
 
-    const usage = await this.memstat.end(this) // pass this here
+    const usage = await this.memplot.end(this) // pass this here
 
     usage.increasePercentage.should.be.within(0, 5)
   })

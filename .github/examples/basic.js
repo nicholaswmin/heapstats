@@ -1,8 +1,8 @@
 // Run in tail mode and observer a seesaw leak
-// start with `node tail.js --memstat`
+// start with `node tail.js --memplot`
 
 import { leaky } from '../../test/leaky.js'
-import Memstat from '../../index.js'
+import Memplot from '../../index.js'
 
 let leak = ''
 function aLeakyFunction(a, b) {
@@ -11,11 +11,11 @@ function aLeakyFunction(a, b) {
   return a + b
 }
 
-const memstat = Memstat()
+const memplot = Memplot()
 
 for (let i = 0; i < 20; i++)
-  await memstat.sample(() => aLeakyFunction({ mb: 1 }))
+  await memplot.sample(() => aLeakyFunction({ mb: 1 }))
 
-const usage = await memstat.end()
+const usage = await memplot.end()
 
 console.log(usage.plot)
