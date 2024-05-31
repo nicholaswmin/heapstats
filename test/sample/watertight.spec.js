@@ -1,5 +1,5 @@
 import chai from 'chai'
-import Memstat from '../index.js'
+import Memstat from '../../index.js'
 
 chai.should()
 
@@ -21,7 +21,7 @@ describe('#sample()', function() {
       res.should.be.a('Number').equal(5)
     })
 
-    it ('reports a small initial heap size', async function() {
+    it ('records a small initial heap size', async function() {
       for (let i = 0; i < 5; i++)
         await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
 
@@ -30,7 +30,7 @@ describe('#sample()', function() {
       usage.initial.should.be.within(5 * 1024 * 1024, 15 * 1024 * 1024)
     })
 
-    it ('reports no significant percentage increase', async function() {
+    it ('records no significant percentage increase', async function() {
       for (let i = 0; i < 10; i++)
         await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
 
@@ -39,7 +39,7 @@ describe('#sample()', function() {
       usage.percentageIncrease.should.be.within(-5, 5)
     })
 
-    it ('reports no change in heap size', async function() {
+    it ('records no change in heap size', async function() {
       for (let i = 0; i < 10; i++)
         await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
 

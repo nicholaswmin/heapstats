@@ -9,6 +9,7 @@ const bytesToMB = bytes => Math.ceil((bytes / 1024) / 1024)
 // - we always make sure we keep first/last elements
 const areEqualConsecutive = (point, i, arr) => i == 0 || point !== arr[i - 1]
 
+// @TODO Absolute 0 reason for this to be a class; make it a pure function
 export default class Plot {
   constructor({ initial = 0, window }) {
     this.window = window
