@@ -12,6 +12,8 @@ jobs:
     strategy:
       matrix:
         node-version: [22.x]
+    env:
+      ENV_CI: 1
     steps:
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
@@ -20,7 +22,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: npm run test-ci
+    - run: npm test
     - run: npm audit
       env:
         NODE_ENV: test
