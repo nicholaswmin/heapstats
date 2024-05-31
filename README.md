@@ -96,8 +96,8 @@ Heap size is the value of [v8.getHeapStatistics()][v8-heap-doc]
 > furnished to do so, subject to the following conditions:
 
 [wmin]: https://github.com/nicholaswmin
-[test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/test.yml/badge.svg
-[ci-test]: https://github.com/nicholaswmin/memstat/actions/workflows/test.yml
+[test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
+[ci-test]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
 [demo]: .github/docs/demo.png
 [watch-demo]: .github/docs/watch-demo.gif
