@@ -51,7 +51,7 @@ function aLeakyFunction(a, b) {
 ```js
 app.get('/users', (req, res) => {
   const memstat = Memstat()
-  await  memstat.record()
+  await memstat.record()
 
   for (let i = 0; i < 200; i++)
     await leakyFunction('leak')
@@ -64,8 +64,9 @@ app.get('/users', (req, res) => {
 })
 ```
 
-> Not really "time-based", strictly speaking; it's collected immediately
-> following a garbage collection cycle.
+> NOTE: really "time-based".
+> Strictly speaking; it's collected immediately following a garbage   
+> collection cycle.
 
 ### Additional stats
 
