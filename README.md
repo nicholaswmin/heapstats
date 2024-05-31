@@ -98,6 +98,9 @@ npm test
   otherwise `this` will be rescoped.
 - Make sure you `await memstat.sample(() => functionUnderTest())`
 
+
+[More examples here][examples].
+
 ### License
 
 > 2024 Nik Kyriakides, [@nicholaswmin][wmin]
@@ -119,3 +122,4 @@ npm test
 [tail-demo]: .github/docs/tail-demo.gif
 [mocha]: https://mochajs.org/
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318
+[examples]: .github/examples
