@@ -24,4 +24,3 @@ jobs:
     - run: npm audit
       env:
         NODE_ENV: test
-        CI_ENV: true
