@@ -10,8 +10,8 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { PerformanceObserver } from 'node:perf_hooks'
 import singleLineLog from 'single-line-log'
 
-import { suspendIO, restoreIO }  from './process-io.js'
-import Plot from './plot/index.js'
+import { suspendIO, restoreIO }  from './src/process-io/index.js'
+import Plot from './src/plot/index.js'
 
 v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
