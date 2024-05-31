@@ -1,14 +1,13 @@
 // Conflict-free leaker
 // Usage
 //
-// const leak = leaky({ mb: 50 })
-// leak.clear() // cleared
+// const leak = leaky({ mb: 50, timeout: 50 })
+// // leaked 50 MB
 //
-// or
-// const leak = leaky ({ mb: 50, timeout: 100 })
-// after 100ms it clears
+// // Do tests
 //
-// avoid using both methods
+// // During test tear down
+// clearLeaks()
 
 import { setTimeout as sleep } from 'node:timers/promises'
 
@@ -30,7 +29,7 @@ const leaky =  async ({ mb = 1, timeout = 50, clear = true }) => {
       val: rand.repeat((100000 / 10) * mb)
     }))
 
-    await sleep(5)
+    await sleep(5) 
   }
 
   const _clear = () => {
