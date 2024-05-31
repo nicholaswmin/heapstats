@@ -18,8 +18,7 @@ const clearLeaks = function() {
 }
 
 const leaky =  async ({ mb = 1, timeout = 50, clear = true }) => {
-  let rand = Math.random().toString().slice(3, 13)
-  let cleared = false
+  const rand = Math.random().toString().slice(3, 13)
 
   rands.push(rand)
 
@@ -29,19 +28,15 @@ const leaky =  async ({ mb = 1, timeout = 50, clear = true }) => {
       val: rand.repeat((100000 / 10) * mb)
     }))
 
-    await sleep(5) 
+    await sleep(5)
   }
 
   const _clear = () => {
-    if (cleared)
-      console.warn('Leak was already cleared')
-
     if (clear)
       global[rand] = undefined
-    cleared = true
 
     if (gc)
-    global.gc()
+      global.gc()
   }
 
   return new Promise(resolve => {
