@@ -4,6 +4,7 @@
   "description": "terminal-based heap allocation plotter",
   "type": "module",
   "main": "index.js",
+  "bin": "./bin.js",
   "scripts": {
     "test": "npx mocha"
   },
