@@ -1,69 +1,35 @@
 import chai from 'chai'
-import chaiHttp from 'chai-http'
-
-import app from './leaky-server.js'
 import Memstat from '../index.js'
 
 chai.should()
-chai.use(chaiHttp)
 
-describe('#memstat utility', function() {
-  this.timeout(15 * 1000).slow(10 * 1000)
-
-  before('Setup one memstat', function() {
-    this.memstat = new Memstat({ live: false, drawPlot: false })
+describe('#memstat', function ()  {
+  beforeEach('setup memstat', function() {
+    this.memstat = Memstat()
+    this.nonLeakyFunction = function(a, b) {
+      return a ** b
+    }
   })
 
-  beforeEach('start memstart before each test', function() {
-    this.memstat.start()
-  })
+  describe ('#memstat.end()', function() {
+    it ('returns a statistics object', async function() {
+      await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
 
-  describe('route consistently leaks memory', function() {
-    it('conmsiders it leaky', async function() {
-      for (let i = 0; i < 50; i++)
-        await chai.request(app)
-          .get('/leaky/always')
-          .then(res => res.should.have.status(204))
+      const usage = await this.memstat.end(this)
 
-      const mem = await this.memstat.stop()
-
-      mem.leaks.should.be.true
+      usage.should.include.keys(['plot', 'initial', 'current', 'snapshots'])
+      usage.plot.should.be.a('String')
+      usage.initial.should.be.a('Number')
+      usage.current.should.be.a('Number')
+      usage.snapshots.should.be.an('Array')
     })
-  })
 
-  describe('route leaks memory for 50% of requests', function() {
-    it('conmsiders it leaky', async function() {
-      for (let i = 0; i < 50; i++)
-        await chai.request(app).get('/leaky/sometimes')
-          .then(res => res.should.have.status(204))
+    it ('returns an ASCII plot', async function() {
+      await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
 
-      const mem = await this.memstat.stop()
+      const usage = await this.memstat.end(this)
 
-      mem.leaks.should.equal(true)
-    })
-  })
-
-  describe('route uses a lot of memory but doesnt leak', function() {
-    it('does not consider it leaky', async function() {
-      for (let i = 0; i < 50; i++)
-        await chai.request(app).get('/spikey')
-          .then(res => res.should.have.status(200))
-
-      const mem = await this.memstat.stop()
-
-      mem.leaks.should.equal(false)
-    })
-  })
-
-  describe('route neither leaks nor spikes', function() {
-    it('does not consider it leaky', async function() {
-      for (let i = 0; i < 50; i++)
-        await chai.request(app).get('/watertight')
-        . then(res => res.should.have.status(200))
-
-      const mem = await this.memstat.stop()
-
-      mem.leaks.should.equal(false)
+      usage.plot.should.have.length.above(100)
     })
   })
 })

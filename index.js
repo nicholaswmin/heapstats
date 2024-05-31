@@ -10,35 +10,20 @@ import vm from 'node:vm'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { PerformanceObserver } from 'node:perf_hooks'
 
-import isLeaking from './is-leaking.js'
 import Plot from './plot/index.js'
 
 v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
-export default class Memstat {
-  constructor({ watch = false, drawPlot = false, window = {} } = {}) {
+class Memstat {
+  constructor({ watch = false, window = {}, ctx = null } = {}) {
     this.watch = watch
-    this.drawPlot = drawPlot
     this.window = window
-
-    this.initial = null
-    this.snapshots = []
-    this.current = null
-    this.leaks = false
-
-    this.plot = null
-    this.observer = null
-  }
-
-  // public
-  start() {
-    this.end()
+    this.ctx = ctx
 
     this.initial = v8.getHeapStatistics().used_heap_size
     this.snapshots = [this.initial]
     this.current = null
-    this.leaks = false
 
     this.plot = new Plot({
       initial: this.initial,
@@ -46,47 +31,47 @@ export default class Memstat {
       window: this.window
     })
 
-    this.observer = new PerformanceObserver(list => {
-      this.plot.update(this.update().getStats())
-    })
-
-    this.observer.observe({ entryTypes: ['gc'], buffered: false })
-
     this.update()
   }
 
   // public
-  stop() {
-    this.end()
+  async sample(cb) {
+    this.update()
 
-    if (this.drawPlot)
-      console.log(this.plot.generate())
+    const res = await cb()
 
-    return this.getReport()
+    this.update()
+
+    return res
+  }
+
+  // public
+  end(ctx) {
+    if (this.plot)
+      this.update().plot.end()
+
+    global.gc()
+
+    if (ctx) {
+      ctx.test.on('end', () => {
+        console.log('END')
+        console.log(this.plot.generate(ctx?.test))
+      })
+    }
+
+    return new Promise(resolve =>
+      process.nextTick(resolve(this.getReport())))
   }
 
   // private
   update() {
     this.current = v8.getHeapStatistics().used_heap_size
     this.snapshots.push(this.current)
-    this.leaks = isLeaking(this.snapshots)
+    this.percentageIncrease = this.percDiffNum(this.initial, this.current)
 
     this.plot.update(this.getStats())
 
     return this
-  }
-
-  // private,
-  // public uses `this.stop()` instead
-  // which calls this
-  async end() {
-    if (this.observer)
-      this.observer.disconnect()
-
-    global.gc()
-
-    if (this.plot)
-      this.update().plot.end()
   }
 
   // private
@@ -97,7 +82,7 @@ export default class Memstat {
       initial: this.initial,
       snapshots: [ ...this.snapshots ],
       current: this.current,
-      leaks: this.leaks
+      percentageIncrease: this.percentageIncrease
     }
   }
 
@@ -106,15 +91,31 @@ export default class Memstat {
   // should get it via calling `this.end()` in userland
   getReport() {
     return {
-      leaks: this.leaks,
-      stats: this.getStats(),
-      plot: this.watch || this.drawPlot ?  this.plot.generate() : null
+      ...this.getStats(),
+      plot: this.plot.generate()
     }
   }
 
-  static watch(watch = true) {
-    const inst = new this({ watch, drawPlot: true })
+  percDiffNum(a, b) {
+    let percent
 
-    return inst.start()
+    if (b !== 0) {
+      if (a !== 0) {
+        percent = (b - a) / a * 100
+      } else {
+        percent = b * 100
+      }
+    } else {
+      percent = - a * 100
+    }
+
+    return Math.floor(percent)
   }
 }
+
+export default opts => new Memstat({
+  window: {
+    width: process.stdout.columns - 5,
+    height: process.stdout.rows - 5
+  }
+})

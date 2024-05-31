@@ -15,47 +15,49 @@ const areEqualConsecutive = (point, i, arr) => i == 0 || point !== arr[i - 1]
 export default class Plot {
   constructor({ initial = 0, watch, window }) {
     this.watch = watch
-    this.window = {
-      width: process.stdout.columns - 20,
-      height: process.stdout.rows - 10,
-      ...window
-    }
+    this.window = window
 
     this.snapshots = []
     this.initial = bytesToMB(initial)
     this.current = 0
-    this.leaks = false
 
-    if (this.watch)
+    if (this.watch) {
       suspendIO()
+      this.observer = new PerformanceObserver((list, entries) => {
+        this.update()
+      })
+
+      this.observer.observe({ entryTypes: ['gc'] })
+    }
   }
 
-  update({ snapshots, current, leaks }) {
+  update({ snapshots, current, percentageIncrease }) {
     this.snapshots = snapshots.map(bytesToMB).filter(areEqualConsecutive)
     this.current = bytesToMB(current)
-    this.leaks = leaks
+    this.percentageIncrease = percentageIncrease
 
     if (this.watch)
-      singleLineLog.stdout(this.generate({ current, snapshots, leaks }))
+      singleLineLog.stdout(this.generate({ current, snapshots }))
 
     return this
   }
 
   end() {
-    if (this.watch)
+    if (this.watch) {
       restoreIO()
+      this.observer.disconnect()
+    }
 
     return this
   }
 
   generate(opts) {
     opts = opts || {}
-
     const colors = typeof opts.colors !== 'undefined' ? opts.colors : true
 
     return plot(this.snapshots, {
-      title: '-- Heap size following GC --',
-      sublabels: [ this.leaks ? 'Possible Leakage' : 'No leakage' ],
+      title: (opts.parent ? opts.parent.title : opts.title) || 'Heap size',
+      sublabels: [ 'Heap alloc. increased by: '+ this.percentageIncrease +'%' ],
       lineLabels: [ 'heap size' ],
       xLabel: 'GC Cycles: ' + this.snapshots.length,
       yLabels: [
@@ -66,11 +68,10 @@ export default class Plot {
       min: 1,
       max: Math.ceil(20 + this.current * 1.25),
       margin: 1,
-      height: this.window.height - 20,
-      width: this.window.width - 7,
+      height: this.window.height,
+      width: this.window.width,
       hideXLabel: true,
-      colors: [ this.leaks ? asciichart.red : asciichart.green ],
-      ...opts
+      colors: [ opts.state === 'failed' ? asciichart.red : asciichart.green ]
     })
   }
 }
