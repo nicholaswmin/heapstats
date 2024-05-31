@@ -3,6 +3,7 @@
 
 import chai from 'chai'
 import Memstat from '../../../index.js'
+import leaky from '../../test/leaky.js'
 
 chai.should()
 
@@ -19,7 +20,7 @@ describe('memory usage profile', function() {
   // this test will fail
   it ('does leak memory', async function() {
     for (let i = 0; i < 30; i++)
-      await this.memstat.sample(() => leakyFunction(this.leak))
+      await this.memstat.sample(() => leaker({ mbPerSecond: 1 }))
 
     const usage = await this.memstat.end(this)
 

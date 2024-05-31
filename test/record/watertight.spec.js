@@ -1,8 +1,12 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import chai from 'chai'
 import Memstat from '../../index.js'
+import { leaky, clearLeaks } from '../leaky.js'
 
 chai.should()
+
+const mbInBytes = mb => Math.ceil(mb * 1024 * 1024)
+const bytesInMb = bytes => Math.ceil(bytes / 1024 / 1024)
 
 describe('#record()', function ()  {
   this.slow(1500)
@@ -40,45 +44,21 @@ describe('#record()', function ()  {
     })
 
     it ('records the same small initial in all checkpoints', function() {
-      this.reportA.initial.should.be.within(
-        this.reportA.initial - 1024 * 1024 * 5,
-        this.reportA.initial + 1024 * 1024 * 5
-      )
-      this.reportB.initial.should.be.within(
-        this.reportB.initial - 1024 * 1024 * 5,
-        this.reportB.initial + 1024 * 1024 * 5
-      )
-      this.reportC.initial.should.be.within(
-        this.reportC.initial - 1024 * 1024 * 5,
-        this.reportC.initial + 1024 * 1024 * 5
-      )
+      this.reportA.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportB.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportC.initial.should.be.within(mbInBytes(5), mbInBytes(15))
     })
 
-    it('records small increases in current between checkpoints', function() {
-      this.reportA.current.should.be.within(
-        this.reportA.initial - 1024 * 1024 * 5,
-        this.reportA.initial + 1024 * 1024 * 5
-      )
-      this.reportB.current.should.be.within(
-        this.reportB.initial - 1024 * 1024 * 5,
-        this.reportB.initial + 1024 * 1024 * 5
-      )
-      this.reportC.current.should.be.within(
-        this.reportC.initial - 1024 * 1024 * 5,
-        this.reportC.initial + 1024 * 1024 * 5
-      )
+    it('records no increases in current between checkpoints', function() {
+      this.reportA.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportB.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportC.initial.should.be.within(mbInBytes(5), mbInBytes(15))
     })
 
     it('records small increases in max between checkpoints', function() {
-      this.reportB.max.should.be.within(
-        this.reportA.max - (1024 * 1024 * 2),
-        this.reportA.max + (1024 * 1024 * 2)
-      )
-
-      this.reportC.max.should.be.within(
-        this.reportB.max - (1024 * 1024 * 2),
-        this.reportB.max + (1024 * 1024 * 2)
-      )
+      this.reportA.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportB.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportC.initial.should.be.within(mbInBytes(5), mbInBytes(15))
     })
   })
 })

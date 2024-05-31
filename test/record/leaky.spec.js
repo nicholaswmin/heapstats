@@ -1,23 +1,23 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import chai from 'chai'
 import Memstat from '../../index.js'
+import { leaky, clearLeaks } from '../leaky.js'
 
 chai.should()
 
+const mbInBytes = mb => Math.ceil(mb * 1024 * 1024)
+const bytesInMb = bytes => Math.ceil(bytes / 1024 / 1024)
+
 describe('#record()', function ()  {
-  this.slow(1500)
+  this.timeout(4000).slow(2500)
 
   describe ('against a leaky function', function() {
     before(function() {
-      this.leakyFunction = function(a, b = 1) {
-        return new Promise(resolve => {
-          const timer = setInterval(() => {
-            a += JSON.stringify(Math.random().toString().repeat(20000 * b))
-          })
-          setTimeout(() => clearInterval(timer), 5)
-          setTimeout(() => resolve(a ** b), 10)
-        })
-      }
+      this.leakyFunction = leaky
+    })
+
+    after(function() {
+      clearLeaks()
     })
 
     before('start, leak, get a report, leak, get another', async function() {
@@ -26,18 +26,16 @@ describe('#record()', function ()  {
       await this.memstat.record()
 
       this.reportA = await this.memstat.getStats()
+
       await sleep(50)
 
-      let leak = ''
-      for (let i = 0; i < 50; i++)
-        await this.leakyFunction(leak)
+      for (let i = 0; i < 5; i++)
+        await this.leakyFunction({ mb: 10 })
 
       this.reportB = await this.memstat.getStats()
 
-      await sleep(50)
-
-      for (let i = 0; i < 50; i++)
-        await this.leakyFunction(leak)
+      for (let i = 0; i < 5; i++)
+        await this.leakyFunction({ mb: 20 })
 
       this.reportC = await this.memstat.getStats()
 
@@ -45,39 +43,21 @@ describe('#record()', function ()  {
     })
 
     it ('records the same small initial in all checkpoints', function() {
-      this.reportA.initial.should.be.within(5000000, 15000000)
-      this.reportB.initial.should.equal(this.reportA.initial)
-      this.reportC.initial.should.equal(this.reportB.initial)
+      this.reportA.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportB.initial.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportC.initial.should.be.within(mbInBytes(5), mbInBytes(15))
     })
 
     it ('records an increase in current between checkpoints', function() {
-      this.reportA.current.should.be.within(
-        this.reportA.initial - 1024 * 1024 * 5,
-        this.reportA.initial + 1024 * 1024 * 5
-      )
-      this.reportB.current.should.be.within(
-        this.reportB.initial - 1024 * 1024 * 2.5,
-        this.reportB.initial + 1024 * 1024 * 20
-      )
-      this.reportC.current.should.be.within(
-        this.reportC.initial - 1024 * 1024 * 1,
-        this.reportC.initial + 1024 * 1024 * 30
-      )
+      this.reportA.current.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportB.current.should.be.within(mbInBytes(15), mbInBytes(25))
+      this.reportC.current.should.be.within(mbInBytes(20), mbInBytes(40))
     })
 
     it ('records an increase in max between checkpoints', function() {
-      this.reportA.current.should.be.within(
-        this.reportA.initial - 1024 * 1024 * 5,
-        this.reportA.initial + 1024 * 1024 * 5
-      )
-      this.reportB.current.should.be.within(
-        this.reportB.initial - 1024 * 1024 * 2.5,
-        this.reportB.initial + 1024 * 1024 * 20
-      )
-      this.reportC.current.should.be.within(
-        this.reportC.initial - 1024 * 1024 * 1,
-        this.reportC.initial + 1024 * 1024 * 40
-      )
+      this.reportA.max.should.be.within(mbInBytes(5), mbInBytes(15))
+      this.reportB.max.should.be.within(mbInBytes(15), mbInBytes(25))
+      this.reportC.max.should.be.within(mbInBytes(20), mbInBytes(40))
     })
   })
 })

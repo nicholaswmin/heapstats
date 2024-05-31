@@ -3,10 +3,7 @@
 import http from 'node:http'
 
 import Memstat from '../../../index.js'
-
-function leakyFunction(leak) {
-  leak+= JSON.stringify(Math.random().toString().repeat(300000))
-}
+import leaky from '../../../text/leaky.js'
 
 const server = http.createServer(async (req, res) => {
   const memstat = Memstat()
@@ -14,7 +11,7 @@ const server = http.createServer(async (req, res) => {
   if (req.url === '/') {
 
     for (let i = 0; i < 200; i++)
-      await leakyFunction('leak')
+      await leaky({ mb: 1 })
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.write('<html><body><p>Hello World</p></body></html>')

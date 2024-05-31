@@ -2,28 +2,31 @@
 // Run with `mocha mocha-leaky.js`
 
 import Memstat from '../../../index.js'
-
-const memstat = Memstat()
-
-function leakyFunction(leak) {
-  leak+= JSON.stringify(Math.random().toString().repeat(300000))
-}
-
-import Memstat from 'memstat'
+import leaker from './leaker.js'
 
 const memstat = Memstat()
 
 // run a potentially leaky function 200 times
-for (let i = 0; i < 200; i++)
-  await memstat.sample(() => leakyFunction('leak'))
+for (let i = 0; i < 3; i++)
+  await memstat.sample(() => leaker({ mbPerSecond: 10 }))
 
 const usage = await memstat.end()
 
- // print the allocation timeline plot
-console.log(usage.plot)
+const {
+  percentageIncrease,
+  snapshots,
+  plot,
 
-// print memory usage stats (in bytes)
-console.log(usage)
+  initial,
+  current,
+  min,
+  max } = usage
+
+ // print the allocation timeline plot
+console.log(plot)
+
+// print max memory usage stats (in bytes)
+console.log(max / 1024 / 1024)
 
 /*
   {

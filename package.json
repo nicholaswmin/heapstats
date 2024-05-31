@@ -12,7 +12,8 @@
     "check-leaks": true,
     "colors": true,
     "spec": [
-      "test/*/*.spec.js"
+      "test/*/*.spec.js",
+      "test/*.spec.js"
     ]
   },
   "keywords": [

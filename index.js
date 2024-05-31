@@ -35,7 +35,8 @@ class Memstat {
 
     if (this.tail) {
       suspendIO()
-      this.start()
+      this.observer = new PerformanceObserver(() => this.update().redrawPlot())
+      this.observer.observe({ entryTypes: ['gc'] })
     }
     this.update()
   }
