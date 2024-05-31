@@ -15,20 +15,30 @@ npm i git+https://github.com/nicholawmin/memstat.git
 ## Usage
 
 ```js
+
+import Memstat from 'memstat'
+
 const memstat = Memstat()
 
 // run a potentially leaky function 200 times
 for (let i = 0; i < 200; i++)
-  await memstat.sample(() => myLeakyFunction(2, 3))
+  await memstat.sample(() => leakyFunction('leak'))
 
-const usage = memstat.end()
+const usage = await memstat.end()
 
-console.log(usage.plot) // print an ASCII allocation timeline plot
+ // print allocation timeline plot
+console.log(usage.plot)
 
-console.log(usage.increasePercentage) // 200, percentage of increase
-console.log(usage.initial) // 10000 (bytes), initial heap size
-console.log(usage.current) // 20000 (bytes) current heap size
-console.log(usage.snapshots) // [10000, 12340, 13100, ....]
+// print memory usage stats (in bytes)
+console.log(usage)
+/*
+  {
+    initial: 4571944, // heat at start
+    current: 19229872, // heap size now
+    percentageIncrease: 320, // increase between initial - now
+    snapshots: [19229872, 22245871, 32186573, ....] // snapshots
+  }
+*/
 ```
 
 ### Mocha
@@ -39,7 +49,8 @@ In [Mocha][mocha], you can pass the test context to `memstat.end(this)` and
 the plot will draw on failed tests:
 
 ```js
-describe ('when run 100 times', function() {
+describe ('when the function is run 100 times', function() {
+
   it ('does not leak memory', async function() {
     for (let i = 0; i < 200; i++)
       await memstat.sample(() => leakyFunction(2, 3))
