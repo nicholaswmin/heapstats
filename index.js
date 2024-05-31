@@ -74,21 +74,21 @@ class Memstat {
       this.schedulePlotDraw(ctx.test)
 
     return new Promise(resolve =>
-      process.nextTick(() => resolve(this.getReport())))
+      process.nextTick(() => resolve(this.getStats())))
   }
 
   // supposedly private,
   // but expose it in case user wants a report before end..
-  getReport() {
+  getStats() {
     return {
-      ...this.getStats(),
+      ...this._getStats(),
       plot: this.plot.generate()
     }
   }
 
   // private
   redrawPlot() {
-    singleLineLog.stdout(this.plot.generate(this.getStats()))
+    singleLineLog.stdout(this.plot.generate(this._getStats()))
   }
 
   exitTailMode() {
@@ -104,7 +104,7 @@ class Memstat {
 
       console.log(this.plot.generate({
         ...test,
-        ...this.getStats()
+        ...this._getStats()
       }))
     })
   }
@@ -113,7 +113,7 @@ class Memstat {
   update() {
     this.current = v8.getHeapStatistics().used_heap_size
     this.snapshots.push(this.current)
-    this.plot.update(this.getStats())
+    this.plot.update(this._getStats())
 
     return this
   }
@@ -128,7 +128,7 @@ class Memstat {
   // private
   // creates stats for internal-use, i.e:
   // plot drawing
-  getStats() {
+  _getStats() {
     return {
       initial: this.initial,
       snapshots: [ ...this.snapshots ],

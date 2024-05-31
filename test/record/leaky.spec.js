@@ -25,21 +25,21 @@ describe('#record()', function ()  {
 
       await this.memstat.record()
 
-      this.reportA = await this.memstat.getReport()
+      this.reportA = await this.memstat.getStats()
       await sleep(50)
 
       let leak = ''
       for (let i = 0; i < 50; i++)
         await this.leakyFunction(leak)
 
-      this.reportB = await this.memstat.getReport()
+      this.reportB = await this.memstat.getStats()
 
       await sleep(50)
 
       for (let i = 0; i < 50; i++)
         await this.leakyFunction(leak)
 
-      this.reportC = await this.memstat.getReport()
+      this.reportC = await this.memstat.getStats()
 
       await this.memstat.stop()
     })
