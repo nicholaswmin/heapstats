@@ -18,6 +18,7 @@ export default ({
 }) => {
   points = points.map(bytesToMB)
 
+  // @FIXME CI Github Actions fails when running asciichart.plot, why?
   return process.env.ENV_CI ? '+'.repeat(1000) : plot(points, {
     title: title,
     sublabels: [ 'Heap alloc. size diff: '+ increasePercentage +'%' ],

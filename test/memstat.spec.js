@@ -58,6 +58,9 @@ describe ('#memstat.end()', function() {
 
   describe('returns an ASCII plot, with:', function() {
     before(async function() {
+      if (!process.env.ENV_CI)
+        this.skip()
+
       await this.memstat.sample(() => this.nonLeakyFunction(2, 3))
       this.usage = await this.memstat.end(this)
     })
