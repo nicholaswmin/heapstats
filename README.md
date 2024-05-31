@@ -46,7 +46,7 @@ app.get('/users', (req, res) => {
 
   res.json({ foo: 'bar' })
 
-  console.log(await memstat.getUsageReport())
+  console.log(await memstat.getStats())
 })
 ```
 
