@@ -1,5 +1,5 @@
 // Passing tests
-// Run with `mocha mocha-non-leaky.js`
+// Run with `mocha mocha-leaky.js --no-package --exit`
 
 import chai from 'chai'
 import Memstat from '../../../index.js'

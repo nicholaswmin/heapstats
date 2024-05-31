@@ -2,13 +2,13 @@
 // Run with `mocha mocha-leaky.js`
 
 import Memstat from '../../../index.js'
-import leaker from './leaker.js'
+import { leaky } from '../../../test/leaky.js'
 
 const memstat = Memstat()
 
 // run a potentially leaky function 200 times
-for (let i = 0; i < 3; i++)
-  await memstat.sample(() => leaker({ mbPerSecond: 10 }))
+for (let i = 0; i < 100; i++)
+  memstat.sample(() => leaky({ mb: 10 }))
 
 const usage = await memstat.end()
 
