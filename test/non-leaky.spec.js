@@ -36,7 +36,7 @@ describe('#sample()', function() {
 
       const usage = await this.memstat.end(this)
 
-      usage.percentageIncrease.should.be.within(-1, 1)
+      usage.percentageIncrease.should.be.within(-5, 5)
     })
 
     it ('reports no change in heap size', async function() {

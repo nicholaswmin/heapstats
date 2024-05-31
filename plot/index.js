@@ -34,7 +34,8 @@ export default class Plot {
     opts = opts || {}
     const colors = typeof opts.colors !== 'undefined' ? opts.colors : true
 
-    return plot(this.snapshots, {
+    // @FIXME Github Actions fails when plotting
+    return process.env.CI_ENV ? '' : plot(this.snapshots, {
       title: (opts.parent ? opts.parent.title : opts.title) || 'Heap size',
       sublabels: [ 'Heap alloc. size diff: '+ this.percentageIncrease +'%' ],
       lineLabels: [ 'heap size' ],

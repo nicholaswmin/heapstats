@@ -1,4 +1,4 @@
-[![test-workflow][test-workflow-badge]][ci-test]
+![test-workflow][test-workflow-badge]
 
 # memstat
 
