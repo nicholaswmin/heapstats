@@ -1,6 +1,5 @@
-import { setTimeout as sleep } from 'node:timers/promises'
-
 import chai from 'chai'
+
 import Memstat from '../../index.js'
 import { leaky, clearLeaks } from '../leaky.js'
 

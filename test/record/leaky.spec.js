@@ -1,5 +1,5 @@
-import { setTimeout as sleep } from 'node:timers/promises'
 import chai from 'chai'
+
 import Memstat from '../../index.js'
 import { leaky, clearLeaks } from '../leaky.js'
 
@@ -26,8 +26,6 @@ describe('#record()', function ()  {
       await this.memstat.record()
 
       this.reportA = await this.memstat.getStats()
-
-      await sleep(50)
 
       for (let i = 0; i < 5; i++)
         await this.leakyFunction({ mb: 10 })

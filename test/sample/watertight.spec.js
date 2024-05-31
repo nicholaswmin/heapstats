@@ -1,4 +1,5 @@
 import chai from 'chai'
+
 import Memstat from '../../index.js'
 
 chai.should()
