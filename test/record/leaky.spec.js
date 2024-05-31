@@ -1,6 +1,6 @@
 import chai from 'chai'
 
-import Memplot from '../../index.js'
+import Heapstat from '../../index.js'
 import { leaky, clearLeaks } from '../leaky.js'
 
 chai.should()
@@ -20,23 +20,23 @@ describe('#record()', function ()  {
     })
 
     before('collect stats across 2 separate leaks', async function() {
-      this.memplot = Memplot()
+      this.heapstat = Heapstat()
 
-      await this.memplot.record()
+      await this.heapstat.record()
 
-      this.reportA = await this.memplot.getStats()
+      this.reportA = await this.heapstat.getStats()
 
       for (let i = 0; i < 5; i++)
         await this.leakyFunction({ mb: 10 })
 
-      this.reportB = await this.memplot.getStats()
+      this.reportB = await this.heapstat.getStats()
 
       for (let i = 0; i < 5; i++)
         await this.leakyFunction({ mb: 20 })
 
-      this.reportC = await this.memplot.getStats()
+      this.reportC = await this.heapstat.getStats()
 
-      await this.memplot.end()
+      await this.heapstat.end()
     })
 
     it ('records the same small initial in all checkpoints', function() {

@@ -1,14 +1,14 @@
 import chai from 'chai'
 
-import Memplot from '../index.js'
+import Heapstat from '../index.js'
 
 chai.should()
 
 const mbToBytes = mb => Math.ceil(mb * 1024 * 1024)
 
-describe ('#memplot.end()', function() {
-  before('setup memplot', function() {
-    this.memplot = Memplot()
+describe ('#end()', function() {
+  before('setup heapstat', function() {
+    this.heapstat = Heapstat()
     this.nonLeakyFunction = function(a, b) {
       return a ** b
     }
@@ -16,9 +16,9 @@ describe ('#memplot.end()', function() {
 
   describe('collects heap statistics, and returns a:', function() {
     before(async function() {
-      await this.memplot.sample(() => this.nonLeakyFunction(2, 3))
+      await this.heapstat.sample(() => this.nonLeakyFunction(2, 3))
 
-      this.usage = await this.memplot.end(this)
+      this.usage = await this.heapstat.end(this)
     })
 
     it ('statistics object', async function() {
@@ -61,8 +61,8 @@ describe ('#memplot.end()', function() {
       if (!process.env.ENV_CI)
         this.skip()
 
-      await this.memplot.sample(() => this.nonLeakyFunction(2, 3))
-      this.usage = await this.memplot.end(this)
+      await this.heapstat.sample(() => this.nonLeakyFunction(2, 3))
+      this.usage = await this.heapstat.end(this)
     })
 
     it ('the ASCII plot text', function() {
@@ -93,14 +93,14 @@ describe ('#memplot.end()', function() {
 
   describe('passing a ctx parameter', function() {
     beforeEach(async function() {
-      await this.memplot.sample(() => this.nonLeakyFunction(2, 3))
+      await this.heapstat.sample(() => this.nonLeakyFunction(2, 3))
 
-      this.usage = await this.memplot.end(this)
+      this.usage = await this.heapstat.end(this)
     })
 
     describe('passing a mocha ctx', function() {
       it ('uses the parent title as the plot title', async function() {
-        this.usage = await this.memplot.end(this)
+        this.usage = await this.heapstat.end(this)
 
         this.usage.plot.should.include('Heap Allocation Timeline')
       })
@@ -109,7 +109,7 @@ describe ('#memplot.end()', function() {
     describe.skip('passing a custom ctx', function() {
       // @FIXME not sure why its not working
       beforeEach(async function() {
-        this.usage = await this.memplot.end({ test: { title: 'Foo Title' }})
+        this.usage = await this.heapstat.end({ test: { title: 'Foo Title' }})
       })
 
       it ('uses the passed test title as the plot title', function() {

@@ -1,5 +1,5 @@
 {
-  "name": "memplot",
+  "name": "heapstat",
   "version": "0.1.0",
   "description": "terminal-based heap allocation plotter",
   "type": "module",

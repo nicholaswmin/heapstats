@@ -1,33 +1,33 @@
 [![test-workflow][test-workflow-badge]][ci-test]
 
-# memplot
+# heapstat
 
-terminal-based [V8 heap allocation statistics][oilpan] / memory plotter for unit-tests
+terminal-based [V8 heap allocation stats][oilpan] plotter
 
 ![Mocha test results showing an ASCII timeline plot of the memory usage][demo]
 
 ## Install
 
 ```bash
-npm i git+ssh://git@github.com:nicholaswmin/memplot.git
+npm i git+ssh://git@github.com:nicholaswmin/heapstat.git
 ```
 
 ## Usage
 
-`memplot.sample(() => fn())`
+`heapstat.sample(() => fn())`
 
 Runs a potentially leaky function 100 times,
 then plots the allocation timeline:
 
 ```js
-import Memplot from 'memplot'
+import Heapstat from 'heapstat'
 
-const memplot = Memplot()
+const heapstat = Heapstat()
 
 for (let i = 0; i < 100; i++)
-  await memplot.sample(() => leakyFunction())
+  await heapstat.sample(() => leakyFunction())
 
-const usage = await memplot.end()
+const usage = await heapstat.end()
 
 console.log(usage.plot)
 ```
@@ -46,12 +46,12 @@ function aLeakyFunction(a, b) {
 
 ### Time based collection
 
-`memplot.record()`
+`heapstat.record()`
 
 ```js
 app.get('/users', (req, res) => {
-  const memplot = Memplot()
-  await memplot.record()
+  const heapstat = Heapstat()
+  await heapstat.record()
 
   for (let i = 0; i < 200; i++)
     await leakyFunction('leak')
@@ -60,7 +60,7 @@ app.get('/users', (req, res) => {
 
   res.json({ foo: 'bar' })
 
-  console.log(await memplot.getStats())
+  console.log(await heapstat.getStats())
 })
 ```
 
@@ -71,7 +71,7 @@ Read: [MDN: PerformanceObserver][mdn-perf-observer]
 
 ### Additional stats
 
-Apart from the ASCII plot, `memplot.end()` returns:
+Apart from the ASCII plot, `heapstat.end()` returns:
 
 ```js
 console.log(usage)
@@ -91,20 +91,20 @@ return by [v8.getHeapStatistics()][v8-heap-doc]
 
 This tool was made for integration into a testing suite.
 
-In [Mocha][mocha], you can pass the test context to `memplot.end(this)` and
+In [Mocha][mocha], you can pass the test context to `heapstat.end(this)` and
 the plot will draw on failed tests on it's own.
 
 ```js
 describe ('when the function is run 100 times', function() {
   before('setup test', function() {
-    this.memplot = Memplot()
+    this.heapstat = Heapstat()
   })
 
   it ('does not leak memory', async function() {
     for (let i = 0; i < 200; i++)
-      await this.memplot.sample(() => leakyFunction(2, 3))
+      await this.heapstat.sample(() => leakyFunction(2, 3))
 
-    const usage = this.memplot.end(this) // pass this
+    const usage = this.heapstat.end(this) // pass this
 
     expect(usage.percentageIncrease).to.be.below(10)
     expect(usage.current).to.be.below(1024 * 1024 * 100)
@@ -116,7 +116,7 @@ describe ('when the function is run 100 times', function() {
 
 Non-mocha test frameworks can pass a test context like so:
 
-`this.memplot.end({ test: { title: 'A whatever test', state: 'failed' }})`
+`this.heapstat.end({ test: { title: 'A whatever test', state: 'failed' }})`
 
 
 ### Tail mode
@@ -124,13 +124,13 @@ Non-mocha test frameworks can pass a test context like so:
 To observe realtime heap statistics:
 
 ```js
-import Memplot from 'memplot'
+import Heapstat from 'heapstat'
 ```
 
-and start with flag `--memplot`, i.e:
+and start with flag `--heapstat`, i.e:
 
 ```bash
-node app.js --memplot
+node app.js --heapstat
 ```
 
 which does this:
@@ -183,7 +183,7 @@ failures depending on whether the sun is up or whether it's a Wednesday.
 
 [nicholaswmin ]: https://github.com/nicholaswmin
 [test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
-[ci-test]: https://github.com/nicholaswmin/memplot/actions/workflows/tests.yml
+[ci-test]: https://github.com/nicholaswmin/heapstat/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
 [mdn-perf-observe]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
 [oilpan]: https://v8.dev/blog/oilpan-library
@@ -193,3 +193,4 @@ failures depending on whether the sun is up or whether it's a Wednesday.
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318
 [examples]: .github/examples
 [brittle-tests]: https://abseil.io/resources/swe-book/html/ch12.html
+[streams]:https://en.wikipedia.org/wiki/Stream_(computing)

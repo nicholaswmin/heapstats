@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import Memplot from './index.js'
+import Heapstat from './index.js'
 
 console.log(process)
 console.log(process.argv)
