@@ -14,15 +14,13 @@ const server = http.createServer(async (req, res) => {
 
       const heapstats = Heapstats()
 
-      heapstats.record()
-
       for (let i = 0; i < 10; i++) {
         await leaky({ mb: 50, timeout: 300 })
 
         res.write(`<h4> Hi! I computed ${i + 1} out of 10 operations.</h4>`)
       }
 
-      const endUsage = await heapstats.end()
+      const endUsage = await heapstats.getStats()
 
       console.log(endUsage.plot)
 

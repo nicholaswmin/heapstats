@@ -26,7 +26,7 @@ describe('#record()', function ()  {
       for (let i = 0; i < 5; i++)
         await this.leakyFunction({ leak: this.leak, mb: 5 })
 
-      this.statsB = await this.heap.stats()
+      this.statsB = await this.heap.stats
 
       for (let i = 0; i < 5; i++)
         await this.leakyFunction({ leak: this.leak, mb: 5 })

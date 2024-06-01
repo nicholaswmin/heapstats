@@ -16,24 +16,29 @@ v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
 class Heapstats {
-  constructor({ tail = false, window = {} } = {}) {
-    this.tail = tail
+  constructor({
+    window = {},
+    tail = false,
+    test = null,
+    drawPlotOnTestState = ['failed'], // add 'passed' to always draw
+  } = {}) {
     this.window = window
-    this.stopped = false
+    this.tail = tail
+    this.drawPlotOnTestState = drawPlotOnTestState
+    this.snapshots = [this.getV8HeapStatisticsMB()]
 
-    this.stats = [v8.getHeapStatistics()]
-
+    // @TODO use polymorphism (class TailingHeaps extends ..)
     if (this.tail) {
       suspendOut()
       this.observeGC(() => this.update().redrawPlot())
+    } else {
+      this.observeGC(() => this.update())
     }
-    this.update()
-  }
 
-  // for time-based recording
-  record() {
-    this.throwIfCannotStart()
-    this.observeGC(() => this.update())
+    if (test)
+      this._drawPlotOnNextLoopForTest(test)
+
+    this.update()
   }
 
   // public
@@ -48,77 +53,50 @@ class Heapstats {
     return result
   }
 
-  // public
-  end(ctx) {
-    this.disconnectGCObserver()
-
-    global.gc()
-
-    // in case we're in a Mocha test,
-    // we want to draw the plot on the *next event loop*
-    // since at this point we don't know if the test has passed/failed
-    // because it has not ended yet
-    if (ctx?.test)
-      this.schedulePlotDraw(ctx.test)
-
-    return new Promise(resolve =>
-      process.nextTick(() => resolve(this.getStats())))
-  }
-
   // supposedly private,
   // but expose it in case user wants a report before end..
-  getStats() {
+  stats() {
     return {
-      ...this._getStats(),
-      stats: this.stats,
-      plot: plot(this._getStats())
+      snapshots: this.snapshots,
+      plot: plot(this._getStats()),
+      ...this._getStats()
     }
   }
 
   // private
   redrawPlot() {
-    singleLineLog.stdout(plot(this._getStats()))
+    singleLineLog.stdout(plot(this.stats()))
   }
 
+  // private
   exitTailMode() {
     this.disconnectGCObserver()
     restoreOut()
   }
 
   // private
-  schedulePlotDraw(test) {
-    setTimeout(() => {
-      if (!['failed'].includes(test.state))
-        return
-
-      console.log(plot({
-        title: `Test: ${test.parent ? test.parent.title : test.title}`,
-        failed: test?.state === 'failed',
-        ...this._getStats()
-      }))
-    })
-  }
-
-  // private
   update() {
-    this.stats.push(v8.getHeapStatistics())
+    this.snapshots.push(this.getV8HeapStatisticsMB())
 
     return this
   }
 
   // private
   disconnectGCObserver() {
-    if (this.observer)
-      this.observer.disconnect()
+    this.observer.disconnect()
+
+    return this
   }
 
   observeGC(cb) {
     this.observer = new PerformanceObserver(() => cb())
     this.observer.observe({ entryTypes: ['gc'] })
+
+    return this
   }
 
   _getStats() {
-    const used_heap_sizes = this.stats.map(stat => stat.used_heap_size)
+    const used_heap_sizes = this.snapshots.map(stat => stat.used_heap_size_mb)
 
     return {
       points: used_heap_sizes,
@@ -150,15 +128,37 @@ class Heapstats {
     return Math.floor(percent)
   }
 
-  throwIfCannotStart() {
-    if (this.stopped)
-      throw new Error('Cannot restart a stopped instance. Create a new one.')
+  getV8HeapStatisticsMB() {
+    return Object.entries(v8.getHeapStatistics())
+      .reduce((acc, item) => ({
+        ...acc,
+        [item[0]] : item[1],
+        [item[0] + '_mb']: Heapstats.bytesToMB(item[1])
+      }), {})
+  }
+
+  _drawPlotOnNextLoopForTest(ctx) {
+    const test = ctx.currentTest || ctx.test
+    setImmediate(() => {
+      const state = test.ctx.test.state ||  ctx.test.state
+
+      if (this.drawPlotOnTestState.includes(state))
+        console.log(plot({
+          title: state ? `Test: "${test.title}" has ${state}` : test.title,
+          failed: state === 'failed',
+          ...this.stats()
+        }))
+    })
+  }
+
+  static bytesToMB(bytes = 0) {
+    return bytes / 1000 / 1000
   }
 }
 
 const window = {
   columns: process.stdout.columns - 25,
-  rows: process.stdout.rows - 20
+  rows: process.stdout.rows - 30
 }
 
 if (process.argv.some(arg => arg.includes('--heapstats'))) {

@@ -1,11 +1,8 @@
 import chai from 'chai'
 
 import Heapstats from '../../index.js'
-import { leaky, clearLeaks } from '../leaky.js'
 
 chai.should()
-
-const mbToBytes = mb => Math.ceil(mb * 1024 * 1024)
 
 describe('#record()', function ()  {
   this.slow(1500)
@@ -18,43 +15,39 @@ describe('#record()', function ()  {
       }
     })
 
-    before('collect stats across 2 separate leaks', async function() {
-      this.heapstats = Heapstats()
+    before('collect stats before each of 2 separate leaks', async function() {
+      this.heap = Heapstats({ test: this })
 
-      await this.heapstats.record()
-
-      this.reportA = await this.heapstats.getStats()
+      this.statsA = await this.heap.stats()
 
       let leak = ''
       for (let i = 0; i < 50; i++)
         await this.nonLeakyFunction()
 
-      this.reportB = await this.heapstats.getStats()
+      this.statsB = await this.heap.stats()
 
       for (let i = 0; i < 50; i++)
         await this.nonLeakyFunction()
 
-      this.reportC = await this.heapstats.getStats()
-
-      await this.heapstats.end()
+      this.statsC = await this.heap.stats()
     })
 
     it ('records an equally small initial for all checkpoints', function() {
-      this.reportA.initial.should.be.within(mbToBytes(5), mbToBytes(15))
-      this.reportB.initial.should.be.within(mbToBytes(5), mbToBytes(15))
-      this.reportC.initial.should.be.within(mbToBytes(5), mbToBytes(15))
+      this.statsA.initial.should.be.within(5, 15)
+      this.statsB.initial.should.be.within(5, 15)
+      this.statsC.initial.should.be.within(5, 15)
     })
 
     it('records no increases in current between checkpoints', function() {
-      this.reportA.initial.should.be.within(mbToBytes(5), mbToBytes(15))
-      this.reportB.initial.should.be.within(mbToBytes(5), mbToBytes(15))
-      this.reportC.initial.should.be.within(mbToBytes(5), mbToBytes(15))
+      this.statsA.initial.should.be.within(5, 15)
+      this.statsB.initial.should.be.within(5, 15)
+      this.statsC.initial.should.be.within(5, 15)
     })
 
     it('records small increases in max between checkpoints', function() {
-      this.reportA.initial.should.be.within(mbToBytes(5), mbToBytes(15))
-      this.reportB.initial.should.be.within(mbToBytes(5), mbToBytes(15))
-      this.reportC.initial.should.be.within(mbToBytes(5), mbToBytes(15))
+      this.statsA.initial.should.be.within(5, 15)
+      this.statsB.initial.should.be.within(5, 15)
+      this.statsC.initial.should.be.within(5, 15)
     })
   })
 })

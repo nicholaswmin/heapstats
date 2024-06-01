@@ -2,7 +2,7 @@
 
 # heapstats
 
-terminal-based [V8 heap allocation stats][oilpan] plotter
+terminal-based [V8 heap allocation stats][oil] plotter
 
 ![Mocha test results showing an ASCII timeline plot of the memory usage][demo]
 
@@ -14,67 +14,61 @@ npm i git+ssh://git@github.com:nicholaswmin/heapstats.git
 
 ## Usage
 
-`heapstats.sample(() => fn())`
-
-Runs a potentially leaky function 100 times,
-then plots the allocation timeline:
 
 ```js
 import Heapstats from 'heapstats'
 
-const heapstats = Heapstats()
+const heap = Heapstats()
 
 for (let i = 0; i < 100; i++)
-  await heapstats.sample(() => leakyFunction())
+  await leakyFunction(5, 10) // assume this function leaks
 
-const usage = await heapstats.end()
+const stats = await heap.stats()
 
-console.log(usage.plot)
+console.log(stats.plot)
 ```
 
-where a leaky function could look like this:
+```text
+                                  Heap Allocation Timeline
 
-```js
-let leak = '' // oops
+Cur: 21.79 MB
+Max: 56.77 MB                        Heap increased: 376%
+      ╷
+56.77 ┼                                 ╭─╮                                 
+45.62 ┤                            ╭────╯ │    ╭────╮     ╭────╮    ╭────╮  
+34.46 ┤                      ╭─────╯      ╰────╯    │  ╭──╯    │ ╭──╯    │  
+23.31 ┤            ╭────╮  ╭─╯                      ╰──╯       ╰─╯       ╰─
+12.15 ┤       ╭────╯    ╰──╯                                                
+ 1.00 ┼───────╯                                                             
+      ┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬
 
-function aLeakyFunction(a, b) {
-  leak += JSON.stringify([`${Math.random()}`.repeat(500000)])
-
-  return a + b
-}
+Initial: 4.57 MB                                               GC Cycles: 27
 ```
 
-### Time based collection
 
-`heapstats.record()`
+Another example: Measuring the heap alloc. timeline during an HTTP request
 
 ```js
-app.get('/users', (req, res) => {
-  const heapstats = Heapstats()
-  await heapstats.record()
 
-  for (let i = 0; i < 200; i++)
-    await leakyFunction('leak')
+app.get('/', (req, res) => {
+  const heap = Heapstats()
 
-  // or anything sync or async.. .
+  await leakyFunction(5, 10)
 
-  res.json({ foo: 'bar' })
+  res.send(200).send('hello world')
 
-  console.log(await heapstats.getStats())
+  const stats = await heap.stats()
+
+  console.log(stats.plot)
 })
 ```
 
-> NOTE: Not really "time-based", strictly speaking it's collected
-> immediately following a garbage collection/compaction cycle.
+### Heap allocation statistics
 
-Read: [MDN: PerformanceObserver][mdn-perf-observer]
-
-### Additional stats
-
-Apart from the ASCII plot, `heapstats.end()` returns:
+Apart from the obvious ASCII plot, `heap.stats()` returns:
 
 ```js
-console.log(usage)
+console.log(stats)
 /*
   initial: 16863610, // heap size bytes on instantiation
   current: 86857600, // current heap size bytes
@@ -84,44 +78,60 @@ console.log(usage)
 */
 ```
 
-Where `V8HeapStats` is an object containing heap allocation statistics, as
-return by [v8.getHeapStatistics()][v8-heap-doc]
+Each `V8HeapStats` object contains [Oilpan's][oil] *heap allocation statistics*,
+as captured by [v8.getHeapStatistics()][v8-heap-doc], in both bytes and
+megabytes.
+
+These stats are collected *immediately* after a
+garbage collection / compaction cycle.
+
 
 ### As a unit-testing utility
 
 This tool was made for integration into a testing suite.
 
-In [Mocha][mocha], you can pass the test context to `heapstats.end(this)` and
-the plot will draw on failed tests on it's own.
+In [Mocha][mocha], you can pass the test context to heapstats, like so:
+
+```js
+
+Heapstats({ test: this })
+```
+
+and the plot will auto-draw itself next to the failing test,
+if the **test fails**.
+
+That's the whole point of this - allowing for quick diagnostics of failing
+unit-tests.
+
 
 ```js
 describe ('when the function is run 100 times', function() {
-  before('setup test', function() {
-    this.heapstats = Heapstats()
+  beforeEach('setup a memory monitor', function() {
+    this.heap = Heapstats({ test: this })
   })
 
   it ('does not leak memory', async function() {
-    for (let i = 0; i < 200; i++)
-      await this.heapstats.sample(() => leakyFunction(2, 3))
+    for (let i = 0; i < 100; i++)
+      await this.heap.sample(() => leakyFunction(2, 3))
 
-    const usage = this.heapstats.end(this) // pass this
-
-    expect(usage.percentageIncrease).to.be.below(10)
-    expect(usage.current).to.be.below(1024 * 1024 * 100)
+    expect(this.heap.stats().current).to.be.below(10)
   })
 
-  // ... rest of tests
+  it ('does not exceed 100 MB in memory usage', async function() {
+    await this.heap.sample(() => leakyFunction(2, 3))
+
+    expect(this.heap.stats().max).to.be.below(100)
+  })
+
+  // ... and so on ...
 })
 ```
 
-Non-mocha test frameworks can pass a test context like so:
-
-`this.heapstats.end({ test: { title: 'A whatever test', state: 'failed' }})`
-
-
 ### Tail mode
 
+
 To observe realtime heap statistics:
+
 
 ```js
 import Heapstats from 'heapstats'
@@ -148,21 +158,92 @@ In other words `console.log`/`err` etc won't work while the plot is tailing.
 npm test
 ```
 
-### Notes
+### Gotchas
 
-This utility was built specifically to aid in quick decisions on whether a  
-unit-test of some code you're *currently* prototyping - is failing as a
-false-positive or just a quick n' dirty introspection about the runtime
-behaviour of some component/interaction you're currently designing of which
-you're unsure about the semantics of - I use it for [streams][streams] because
-they have just about a gazillion corner cases baked into them and have had
-committees over committee's change their semantics a billion times just in the
-past year.
+### Dont use arrow functions
 
-In *most* other cases, this, or any early low-level profiling, is probably
-*unnecessary*  and can end up turning your unit tests into a
-[brittle, flaky and annoying mess][brittle-tests] of randomly bitching unit-test
-failures depending on whether the sun is up or whether it's a Wednesday.
+Avoid using arrow functions in Mocha's `describe`/`before`/`it` callbacks.  
+They rescope `this`. Mocha is not made to use lambdas like that - your tests
+might work but you can't use any of Mochas `this.timeout`/`this.slow`...
+because an arrow function will not capture it's context.
+
+### Make proper use of the setup/teardown handlers
+
+Avoid doing any setup work outside of designated setup/teardown handlers, i.e
+`before`/`beforeEach`/`after`/`afterEach`...
+
+Mocha gives each of them a unique context which maps correctly to subsequent
+context where the assertions are taking place `describe`/`it`.
+
+### Avoid global setup/teardown handlers
+
+Avoid use of global setup handlers as well; wrap the entire test file
+in a `describe` - Mocha has weird rules when it comes to how it produces
+context for `before`/`beforeEach`/`after`/`afterEach` that are scoped outside
+of a `describe`.
+
+These trip-ups are especially important when you're planning on synthetically
+creating memory leaks - you're 100% guaranteed to taint the results of one
+test case from the leaks created in another.
+
+> Bad
+
+```js
+describe('test..', () => {
+  // might look like it works but actually produces side-effects.
+  // Put it in a proper setup handler.
+  const heap = Heapstats({ test: this }) // oops, `this` is `undefined` here
+
+  it('does not create memory spikes', () => {
+    const stats = heap.stats()
+    stats.max.should.be.less.than(10000)
+
+    // ... and so on...
+  })
+})
+```
+
+> Improved but still meh
+
+```js
+// this is setup properly using a proper setup handler
+// But it's still global ...
+beforeEach(function() { // regular functions, good
+  this.heap = Heapstats({ test: this }) //`this` is properly defined
+  this.stats = heap.stats()
+})
+
+describe('test..', function() {
+  it('does not create memory spikes', () => {
+    this.stats.max.should.be.less.than(10000)
+
+    // ... and so on...
+  })
+})
+```
+
+> Perfect
+
+```js
+describe('test..', function() {
+  // Non-global, no arrow functions, proper setups
+  beforeEach(function() {
+    this.heap = Heapstats({ test: this })
+    this.stats = heap.stats()
+  })
+
+  afterEach(function() {
+    // use this to clear your leaks
+  })
+
+  it('does not create memory spikes', () => {
+    this.stats.max.should.be.less.than(10000)
+
+    // ... and so on...
+  })
+})
+```
+
 
 
 [More examples here][examples].

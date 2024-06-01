@@ -3,27 +3,48 @@
 
 import chai from 'chai'
 import Heapstats from '../../index.js'
-import { leaky, clearLeaks } from '../../test/leaky.js'
+import leaky from '../../test/leaky.js'
 
 chai.should()
-
-describe('memory usage profile', function() {
-  before('setup heapstats', function() {
+describe('Testing', function() {
+  beforeEach('operation 1', function() {
     this.leak = []
-    this.heapstats = Heapstats()
+    this.heap = Heapstats({ test: this })
+    this.aLeakyFunction = function() { }
   })
 
-  after('memory usage test tearedown', function() {
-    clearLeaks()
+  it ('passes 1', async function() {
+    (true).should.equal(true)
   })
 
-  // this test will fail
-  it ('doesnt leak (this test should fail & print a plot)', async function() {
-    for (let i = 0; i < 30; i++)
-      this.heapstats.sample(() => leaky({ mb: 10 }))
+  it ('fails 2', async function() {
+    (true).should.equal(false)
+  })
 
-    const usage = await this.heapstats.end(this)
+  it ('passes 3', async function() {
+    (true).should.equal(true)
+  })
 
-    usage.increasePercentage.should.be.within(10, 20)
+  describe('some other op', function() {
+    it ('passes 4.1', async function() {
+      (3).should.equal(1)
+    })
+
+    it ('fails 4.2', async function() {
+      this.heap = Heapstats({ test: this })
+
+      for (let i = 0; i < 5; i++)
+        await this.aLeakyFunction({ mb: 10 });
+
+      ;(1).should.equal(3)
+    })
+
+    it ('passes 4.3', async function() {
+      (3).should.equal(3)
+    })
+  })
+
+  it ('passes 4', async function() {
+    (true).should.equal(true)
   })
 })

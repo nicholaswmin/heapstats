@@ -1,30 +1,37 @@
-// Conflict-free leaker
-// Usage
+// Conflict-free, non-blocking, memory leaks
 //
-// const leak = leaky({ mb: 50, timeout: 50 })
+// ## Usage
+//
+// Provide the leak target externally, as an argument:
+//
+// ```js
+// import leaky from 'leaky'
+//
+// const leak = {}
+// await leaky({ leak, mb: 50, timeout: 50 })
 // // leaked 50 MB
 //
-// // Do tests
+// // do stuff...
 //
-// // During test tear down
-// clearLeaks()
+// // dont forget to clear it when done ...
+// leak = undefined
+// global.gc()
+// ```
 
 import { setTimeout as sleep } from 'node:timers/promises'
 
-const rands = []
-
-const clearLeaks = function() {
-  rands.forEach(rand => global[rand] = undefined)
-}
-
-const leaky =  async ({ mb = 1, timeout = 50, clear = true }) => {
+export default async ({
+  leak = {},
+  mb = 1,
+  timeout = 50,
+  clear = false ,
+  gc = true
+}) => {
   const rand = Math.random().toString().slice(3, 13)
 
-  rands.push(rand)
-
   for (let i = 0; i < 10; i++ ) {
-    global[rand] = global[rand] || []
-    global[rand].push(JSON.stringify({
+    leak[rand] = leak[rand] || []
+    leak[rand].push(JSON.stringify({
       val: rand.repeat((100000 / 10) * mb)
     }))
 
@@ -33,7 +40,7 @@ const leaky =  async ({ mb = 1, timeout = 50, clear = true }) => {
 
   const _clear = () => {
     if (clear)
-      global[rand] = undefined
+      leak[rand] = undefined
 
     if (gc)
       global.gc()
@@ -46,5 +53,3 @@ const leaky =  async ({ mb = 1, timeout = 50, clear = true }) => {
     }, timeout)
   })
 }
-
-export { leaky, clearLeaks }

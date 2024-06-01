@@ -11,11 +11,11 @@ function aLeakyFunction(a, b) {
   return a + b
 }
 
-const heapstats = Heapstats()
+const heap = Heapstats()
 
 for (let i = 0; i < 20; i++)
   await heapstats.sample(() => aLeakyFunction({ mb: 1 }))
 
-const usage = await heapstats.end()
+const usage = await heap.getstatStats()
 
 console.log(usage.plot)

@@ -13,7 +13,7 @@ function nonLeakyFunction() {
 describe('memory usage profile', function() {
   beforeEach('setup heapstats', function() {
     this.leak = []
-    this.heapstats = Heapstats()
+    this.heapstats = Heapstats({ test: this.currentTest })
   })
 
   // this test will pass
@@ -23,8 +23,37 @@ describe('memory usage profile', function() {
     for (let i = 0; i < 30; i++)
       await this.heapstats.sample(() => nonLeakyFunction())
 
-    const usage = await this.heapstats.end(this) // pass this here
+    const usage = await this.heapstats.getStats()
 
     usage.increasePercentage.should.be.within(0, 5)
+  })
+
+  it ('Rounds all time series data passed to it', function(done) {
+    (3).should.equal(3)
+    setTimeout(() => {
+      done()
+    }, 500)
+  })
+
+  it ('does not leak memory', function(done) {
+    (3).should.equal(3)
+    setTimeout(() => {
+      done()
+    }, 500)
+  })
+
+  it ('does not leak memory', function(done) {
+    (3).should.equal(3)
+    setTimeout(() => {
+      done()
+    }, 500)
+  })
+
+
+  it ('does not leak memory', function(done) {
+    (3).should.equal(3)
+    setTimeout(() => {
+      done()
+    }, 500)
   })
 })
