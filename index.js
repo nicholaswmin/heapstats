@@ -157,8 +157,8 @@ class Heapstats {
 }
 
 const window = {
-  columns: process.stdout.columns - 25,
-  rows: process.stdout.rows - 30
+  columns: (process.stdout.columns || 130) - 25,
+  rows: (process.stdout.rows || 40) - 30
 }
 
 if (process.argv.some(arg => arg.includes('--heapstats'))) {

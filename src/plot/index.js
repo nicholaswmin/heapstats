@@ -14,8 +14,7 @@ export default ({
   title = 'Heap Allocation Timeline',
   colors = true
 }) => {
-  // @FIXME CI Github Actions fails when running asciichart.plot, why?
-  return process.env.ENV_CI ? '+'.repeat(1000) : plot(points, {
+  return plot(points, {
     title: title,
     sublabels: width > 45 ?
       [ 'Heap increased: '+ increasePercentage +'%'.slice(0, 10) ] :

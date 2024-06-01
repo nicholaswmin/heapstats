@@ -137,5 +137,9 @@ export default function plot(yArray, config = {}) {
     `\n${asciichart.blue}${xStartLabel}${config.xLabel.padStart(fullWidth - xStartLabel.length - 1)}${asciichart.reset}` :
     '';
 
-  return `*\n${title}${yLabel}${plot}\n${ticks}\n${xLabel}\n${' '.repeat(xLabelMargin)}\n`;
+  // @NOTE The beginning and end are marked by `⬞⬞` <- for start padding
+  // and -> `⬝⬝` for end padding. These distinct unicode sequences are
+  // used in tests to verify existence and size of the plot in the tests.
+  // Each side uses different chars, although they look the same.
+  return `⬝⬝\n${title}${yLabel}${plot}\n${ticks}\n${xLabel}\n${' '.repeat(xLabelMargin)}\n⬞⬞`;
 }

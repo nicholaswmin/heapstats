@@ -5,7 +5,7 @@ import leaky from '../leaky.js'
 
 chai.should()
 
-describe('#record()', function ()  {
+describe('statistics collection', function ()  {
   this.timeout(4000).slow(2500)
   describe ('against a leaky function', function() {
     before(function() {

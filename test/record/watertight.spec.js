@@ -4,7 +4,7 @@ import Heapstats from '../../index.js'
 
 chai.should()
 
-describe('#record()', function ()  {
+describe('statistics collection', function ()  {
   this.slow(1500)
 
   describe ('against a non-leaky function', function() {

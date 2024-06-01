@@ -21,11 +21,7 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import { styleText as style } from 'node:util'
 
-export default async ({
-  leak = {},
-  mb = 1,
-  log = false
-}) => {
+export default async ({ leak, mb = 1, log = false }) => {
   const rand = Math.random().toString().slice(3, 13)
 
   if (log) {

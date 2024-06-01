@@ -21,11 +21,10 @@ import Heapstats from 'heapstats'
 const heap = Heapstats()
 
 for (let i = 0; i < 100; i++)
-  await leakyFunction(5, 10) // assume this function leaks
+  addTwoNumbers(5, 3)
 
-const stats = await heap.stats()
 
-console.log(stats.plot)
+console.log(heap.stats().plot)
 ```
 
 ```text
@@ -46,39 +45,44 @@ Initial: 4.57 MB                                               GC Cycles: 27
 ```
 
 
-Another example: Measuring the heap alloc. timeline during an HTTP request
+Measuring the heap alloc. timeline of an HTTP request
 
 ```js
 
-app.get('/', (req, res) => {
-  const heap = Heapstats()
+const heap = Heapstats()
 
-  await leakyFunction(5, 10)
 
-  res.send(200).send('hello world')
+app.get('/users', (req, res) => {
+  const users = await leakyDatabaseCall()
 
-  const stats = await heap.stats()
+  res.json(users)
 
-  console.log(stats.plot)
+  console.log(heap.stats().plot)
 })
 ```
 
 ### Heap allocation statistics
 
-Apart from the obvious ASCII plot, `heap.stats()` returns:
+Apart from the ASCII plot, `heap.stats()` returns:
 
 ```js
-console.log(stats)
-/*
-  initial: 16863610, // heap size bytes on instantiation
-  current: 86857600, // current heap size bytes
-  max: 104857600, // maximum size of allocated heap at any point,
-  increasePercentage: 2.4, // difference of current and initial, expressed in %
-  stats: [V8HeapStats, V8HeapStats, V8HeapStats...] // collected stats
-*/
+{
+   // heap size on instantiation, since `Heapstats()`
+  "initial": 16863610,
+  // heap size now
+  "current": 86857600,
+  // max. heap size since `Heapstats()`
+  "max": 104857600,
+   // diff. of initial and current, expressed as %
+  "increasePercentage": 2.4,
+   // collected stats of each garbage collection
+  "snapshots": [V8HeapStats, V8HeapStats ...]
+}
 ```
 
-Each `V8HeapStats` object contains [Oilpan's][oil] *heap allocation statistics*,
+size values are expressed in bytes
+
+A `V8HeapStats` object contains [Oilpan's][oil] *garbage collection statistics*,
 as captured by [v8.getHeapStatistics()][v8-heap-doc], in both bytes and
 megabytes.
 
@@ -86,9 +90,9 @@ These stats are collected *immediately* after a
 garbage collection / compaction cycle.
 
 
-### As a unit-testing utility
+## As a unit-testing utility
 
-This tool was made for integration into a testing suite.
+This tool was made for unit-testing
 
 In [Mocha][mocha], you can pass the test context to heapstats, like so:
 
@@ -97,29 +101,29 @@ In [Mocha][mocha], you can pass the test context to heapstats, like so:
 Heapstats({ test: this })
 ```
 
-and the plot will auto-draw itself next to the failing test,
-if the **test fails**.
-
-That's the whole point of this - allowing for quick diagnostics of failing
-unit-tests.
+the plot will auto-draw itself next to its test, if the **test fails**.
 
 
 ```js
-describe ('when the function is run 100 times', function() {
-  beforeEach('setup a memory monitor', function() {
+describe ('addTwoNumbers()', function() {
+  it ('adds 2 numbers', function() {
+    const result = addTwoNumbers(2, 3)
+
+    result.should.be.a('Number').equal(5)
+  })
+
+  describe ('when run 100 times', function() {
     this.heap = Heapstats({ test: this })
+
+    for (let i = 0; i < 100; i++)
+      addTwoNumbers(2, 3)
   })
 
   it ('does not leak memory', async function() {
-    for (let i = 0; i < 100; i++)
-      await this.heap.sample(() => leakyFunction(2, 3))
-
     expect(this.heap.stats().current).to.be.below(10)
   })
 
   it ('does not exceed 100 MB in memory usage', async function() {
-    await this.heap.sample(() => leakyFunction(2, 3))
-
     expect(this.heap.stats().max).to.be.below(100)
   })
 
@@ -147,10 +151,13 @@ which does this:
 
 ![GIF showing realtime memory usage as a line plot, in terminal][tail-demo]
 
-Note that while the tail mode is pinned, any output to `stdout`/`stderr`
+This is useful when prototyping.
+
+**Note** that while the tail mode is pinned, any output to `stdout`/`stderr`
 is suppressed to avoid interference with the plot redraw cycle.
 
-In other words `console.log`/`err` etc won't work while the plot is tailing.
+In other words `console.log`/`console.error` etc won't output anything
+while the plot is tailing.
 
 ## Test
 
@@ -160,14 +167,37 @@ npm test
 
 ### Gotchas
 
-### Dont use arrow functions
+This plotter doesnt suggest going all-out with memory profiling while you're
+unit-testing. In fact, that's almost certainly a stupid proposition in the
+vast majority of cases.
 
-Avoid using arrow functions in Mocha's `describe`/`before`/`it` callbacks.  
-They rescope `this`. Mocha is not made to use lambdas like that - your tests
+I regularly have to deal with code that requires creating my own streams and
+their interfaces; streams are just downright nasty when it comes to weird
+error-handling - you're never too sure if what you've assembled is in fact a
+JSON compressor or a homemade pipe-bomb.
+
+In my case, having some memory profiling coverage helps; in most others
+cases it's probably just a futile pseudo-academic navel-gazing exercise.
+
+### Mocha
+
+#### Mocha and arrow functions dont mix
+
+Mocha makes heavy use of the lexical scope - `this` context is used
+for everything, from configuration to grouping test scenarios.
+
+Arrow functions/lambdas are amazing because they do the exact opposite,
+they don't bind `this`.
+
+Mocha is not made to use lambdas like that - your tests
 might work but you can't use any of Mochas `this.timeout`/`this.slow`...
 because an arrow function will not capture it's context.
 
-### Make proper use of the setup/teardown handlers
+This tool keeps in line with Mochas convention and also requires passing `this`
+in the tests.
+
+
+#### Make proper use of the setup/teardown handlers
 
 Avoid doing any setup work outside of designated setup/teardown handlers, i.e
 `before`/`beforeEach`/`after`/`afterEach`...
@@ -175,7 +205,8 @@ Avoid doing any setup work outside of designated setup/teardown handlers, i.e
 Mocha gives each of them a unique context which maps correctly to subsequent
 context where the assertions are taking place `describe`/`it`.
 
-### Avoid global setup/teardown handlers
+
+#### Avoid global setup/teardown handlers
 
 Avoid use of global setup handlers as well; wrap the entire test file
 in a `describe` - Mocha has weird rules when it comes to how it produces
@@ -184,7 +215,8 @@ of a `describe`.
 
 These trip-ups are especially important when you're planning on synthetically
 creating memory leaks - you're 100% guaranteed to taint the results of one
-test case from the leaks created in another.
+test case from the leaks created in another unless you use Mocha how
+it's supposed to be used.
 
 > Bad
 
@@ -229,14 +261,22 @@ describe('test..', function() {
   // Non-global, no arrow functions, proper setups
   beforeEach(function() {
     this.heap = Heapstats({ test: this })
+
+    this.leak = ''
+    setInterval(leak => {
+      this.leak += JSON.stringify(Array.from({ length: 200 }).fill('x'))
+    }, 500, this.leak)
+
     this.stats = heap.stats()
   })
 
   afterEach(function() {
     // use this to clear your leaks
+    this.leak = undefined
+    global.gc()
   })
 
-  it('does not create memory spikes', () => {
+  it('does not create memory spikes', function() {
     this.stats.max.should.be.less.than(10000)
 
     // ... and so on...
