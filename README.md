@@ -267,7 +267,7 @@ describe('test..', function() {
 [ci-test]: https://github.com/nicholaswmin/heapstats/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatsistics
 [mdn-perf-observe]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
-[oilpan]: https://v8.dev/blog/oilpan-library
+[oil]: https://v8.dev/blog/oilpan-library
 [demo]: .github/docs/demo.png
 [tail-demo]: .github/docs/tail-demo.gif
 [mocha]: https://mochajs.org/
