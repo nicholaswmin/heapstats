@@ -19,15 +19,27 @@
 // ```
 
 import { setTimeout as sleep } from 'node:timers/promises'
+import { styleText as style } from 'node:util'
 
 export default async ({
   leak = {},
   mb = 1,
-  timeout = 50,
-  clear = false ,
-  gc = true
+  log = false
 }) => {
   const rand = Math.random().toString().slice(3, 13)
+
+  if (log) {
+    const leaksizeMB = Math.round(
+      new Blob([JSON.stringify(leak)]).size / 1000 / 1000
+    )
+
+    console.log(
+      style('gray', 'Leaked:'),
+      style('yellow', `${mb} MB`),
+      style('gray', '| Total leak:'),
+      style('yellow', `${leaksizeMB} MB`)
+    )
+  }
 
   for (let i = 0; i < 10; i++ ) {
     leak[rand] = leak[rand] || []
@@ -38,18 +50,9 @@ export default async ({
     await sleep(5)
   }
 
-  const _clear = () => {
-    if (clear)
-      leak[rand] = undefined
-
-    if (gc)
-      global.gc()
-  }
-
   return new Promise(resolve => {
     setTimeout(() => {
-      _clear()
       resolve()
-    }, timeout)
+    }, 100)
   })
 }
