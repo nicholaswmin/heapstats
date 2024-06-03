@@ -5,12 +5,7 @@
 terminal-based [V8 heap allocation stats][oil] plotter
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/docs/demo.png">
-  <img alt="Mocha test results showing an ASCII timeline plot of the memory usage" src=".github/docs/demo-dark.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset=".github/docs/demo.png">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/docs/demo-dark.png">
   <img alt="Mocha test results showing an ASCII timeline plot of the memory usage" src=".github/docs/demo.png">
 </picture>
 
