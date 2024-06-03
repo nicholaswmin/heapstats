@@ -4,8 +4,16 @@
 
 terminal-based [V8 heap allocation stats][oil] plotter
 
-![Mocha test results showing an ASCII timeline plot of the memory usage](.github/docs/demo.png#gh-dark-mode-only)
-![Mocha test results showing an ASCII timeline plot of the memory usage](.github/docs/demo-dark.png#gh-light-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/docs/demo.png">
+  <img alt="Mocha test results showing an ASCII timeline plot of the memory usage" src=".github/docs/demo-dark.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/docs/demo.png">
+  <img alt="Mocha test results showing an ASCII timeline plot of the memory usage" src=".github/docs/demo.png">
+</picture>
+
 
 ## Install
 
