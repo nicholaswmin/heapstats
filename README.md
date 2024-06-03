@@ -4,7 +4,8 @@
 
 terminal-based [V8 heap allocation stats][oil] plotter
 
-![Mocha test results showing an ASCII timeline plot of the memory usage][demo]
+![Mocha test results showing an ASCII timeline plot of the memory usage](.github/docs/demo.png#gh-dark-mode-only)
+![Mocha test results showing an ASCII timeline plot of the memory usage](.github/docs/demo-dark.png#gh-light-mode-only)
 
 ## Install
 
@@ -165,101 +166,14 @@ while the plot is tailing.
 npm test
 ```
 
-### Gotchas
-
-This plotter doesnt suggest going all-out with memory profiling while you're
-unit-testing. In fact, that's almost certainly a stupid proposition in the
-vast majority of cases.
-
-I regularly have to deal with code that requires creating my own streams and
-their interfaces; streams are just downright nasty when it comes to weird
-error-handling - you're never too sure if what you've assembled is in fact a
-JSON compressor or a homemade pipe-bomb.
-
-In my case, having some memory profiling coverage helps; in most others
-cases it's probably just a futile pseudo-academic navel-gazing exercise.
-
-### Mocha
-
-#### Mocha and arrow functions dont mix
-
-Mocha makes heavy use of the lexical scope - `this` context is used
-for everything, from configuration to grouping test scenarios.
-
-Arrow functions/lambdas are amazing because they do the exact opposite,
-they don't bind `this`.
-
-Mocha is not made to use lambdas like that - your tests
-might work but you can't use any of Mochas `this.timeout`/`this.slow`...
-because an arrow function will not capture it's context.
-
-This tool keeps in line with Mochas convention and also requires passing `this`
-in the tests.
-
-
-#### Make proper use of the setup/teardown handlers
-
-Avoid doing any setup work outside of designated setup/teardown handlers, i.e
-`before`/`beforeEach`/`after`/`afterEach`...
-
-Mocha gives each of them a unique context which maps correctly to subsequent
-context where the assertions are taking place `describe`/`it`.
-
-
-#### Avoid global setup/teardown handlers
-
-Avoid use of global setup handlers as well; wrap the entire test file
-in a `describe` - Mocha has weird rules when it comes to how it produces
-context for `before`/`beforeEach`/`after`/`afterEach` that are scoped outside
-of a `describe`.
-
-These trip-ups are especially important when you're planning on synthetically
-creating memory leaks - you're 100% guaranteed to taint the results of one
-test case from the leaks created in another unless you use Mocha how
-it's supposed to be used.
-
-> Bad
+> A nice test skeleton
 
 ```js
-describe('test..', () => {
-  // might look like it works but actually produces side-effects.
-  // Put it in a proper setup handler.
-  const heap = Heapstats({ test: this }) // oops, `this` is `undefined` here
-
-  it('does not create memory spikes', () => {
-    const stats = heap.stats()
-    stats.max.should.be.less.than(10000)
-
-    // ... and so on...
-  })
-})
-```
-
-> Improved but still meh
-
-```js
-// this is setup properly using a proper setup handler
-// But it's still global ...
-beforeEach(function() { // regular functions, good
-  this.heap = Heapstats({ test: this }) //`this` is properly defined
-  this.stats = heap.stats()
-})
-
-describe('test..', function() {
-  it('does not create memory spikes', () => {
-    this.stats.max.should.be.less.than(10000)
-
-    // ... and so on...
-  })
-})
-```
-
-> Perfect
-
-```js
-describe('test..', function() {
-  // Non-global, no arrow functions, proper setups
+describe('test..', function() { // regular function-callback
+  // Non-global handler,
+  // scoped in a describe
   beforeEach(function() {
+    // proper, non-global setup
     this.heap = Heapstats({ test: this })
 
     this.leak = ''
@@ -270,12 +184,13 @@ describe('test..', function() {
     this.stats = heap.stats()
   })
 
+  // clean up after yourself :)
   afterEach(function() {
-    // use this to clear your leaks
     this.leak = undefined
     global.gc()
   })
 
+  // start testing...
   it('does not create memory spikes', function() {
     this.stats.max.should.be.less.than(10000)
 
@@ -283,8 +198,6 @@ describe('test..', function() {
   })
 })
 ```
-
-
 
 [More examples here][examples].
 
@@ -302,13 +215,12 @@ describe('test..', function() {
 > copies of the Software, and to permit persons to whom the Software is
 > furnished to do so.
 
-[nicholaswmin ]: https://github.com/nicholaswmin
+[nicholaswmin]: https://github.com/nicholaswmin
 [test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
 [ci-test]: https://github.com/nicholaswmin/heapstats/actions/workflows/tests.yml
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatsistics
 [mdn-perf-observe]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
 [oil]: https://v8.dev/blog/oilpan-library
-[demo]: .github/docs/demo.png
 [tail-demo]: .github/docs/tail-demo.gif
 [mocha]: https://mochajs.org/
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318
