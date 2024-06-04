@@ -142,7 +142,7 @@ class Heapstats {
     const self = this
     const title = test.title
 
-    // This is messing with Mochas internals;  
+    // This is messing with Mochas internals;
     // Mocha sets a `ctx.state = 'failed' or 'passed'` when the test ends,
     // so we set a setter on that property it to observe and infer it's ending
     // no other reliable way to detect when the test ends
@@ -180,7 +180,7 @@ class Heapstats {
 
 const window = {
   columns: (process.stdout.columns || 130) - 25,
-  rows: (process.stdout.rows || 40) - 30
+  rows: (process.stdout.rows || 40) - 10
 }
 
 if (process.argv.some(arg => arg.includes('--heapstats'))) {
