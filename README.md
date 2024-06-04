@@ -25,8 +25,7 @@ import Heapstats from 'heapstats'
 const heap = Heapstats()
 
 for (let i = 0; i < 100; i++)
-  addTwoNumbers(5, 3)
-
+  await addTwoNumbers(5, 3) // assume this has a memory leak
 
 console.log(heap.stats().plot)
 ```

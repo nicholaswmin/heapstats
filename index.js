@@ -36,7 +36,7 @@ class Heapstats {
     }
 
     if (test)
-      this._drawPlotOnNextLoopForTest(test)
+      this._drawPlotWhenTestStateChanges(test)
 
     this.update()
   }
@@ -137,17 +137,39 @@ class Heapstats {
       }), {})
   }
 
-  _drawPlotOnNextLoopForTest(ctx) {
+  _drawPlotWhenTestStateChanges(ctx) {
     const test = ctx.currentTest || ctx.test
-    setImmediate(() => {
-      const state = test.ctx.test.state ||  ctx.test.state
+    const self = this
+    const title = test.title
 
-      if (this.drawPlotOnTestState.includes(state))
-        console.log(plot({
-          title: state ? `Test: "${test.title}" has ${state}` : test.title,
-          failed: state === 'failed',
-          ...this.stats()
-        }))
+    // This is messing with Mochas internals;  
+    // Mocha sets a `ctx.state = 'failed' or 'passed'` when the test ends,
+    // so we set a setter on that property it to observe and infer it's ending
+    // no other reliable way to detect when the test ends
+    Object.defineProperty(test, 'state', {
+      configurable: true,
+      get: function() {
+        return this._state
+      },
+
+      set: function(state) {
+        this._state = state
+
+        try {
+          if (self.drawPlotOnTestState.includes(state))
+            setImmediate(() => {
+              console.log(plot({
+                title: state ? `Test: "${title}" has ${state}` : title,
+                failed: state === 'failed',
+                ...self.stats()
+              }))
+            }, 0)
+        } catch (err) {
+          console.error(err)
+
+          throw err
+        }
+      }
     })
   }
 
