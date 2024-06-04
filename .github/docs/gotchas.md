@@ -41,6 +41,7 @@ An example of a proper "leaky" test:
 import { expect } from 'chai'
 import Heapstats from '../../index.js'
 
+// A function that adds two numbers but also leaks memory
 global.leak = []
 const addTwoNumbers = (a, b) => new Promise(resolve => {
   const timer = setInterval(() =>
@@ -64,17 +65,17 @@ describe('#addTwoNumbers', function() {
     global.gc()
   })
 
-  it('1.1 - passes: returns correct addition result', async function() {
+  it('returns correct addition result', async function() {
     const result = await addTwoNumbers(10, 20)
     expect(result).to.equal(30)
   })
 
-  it('1.2 - fails: doesnt leak memory', async function() {
+  it('doesnt leak memory', async function() {
     const result = await addTwoNumbers(10, 20)
     expect(this.heap.stats().increasePercentage).to.be.below(10)
   })
 
-  it('1.3 - passes: returns a number', async function() {
+  it('returns a number', async function() {
     const result = await addTwoNumbers(10, 20)
     expect(result).to.be.a('Number')
   })

@@ -5,10 +5,9 @@
 terminal-based [V8 heap allocation stats][oil] plotter
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/docs/demo-dark.png">
-  <img alt="Mocha test results showing an ASCII timeline plot of the memory usage" src=".github/docs/demo.png">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/demo--dark.png">
+  <img alt="Mocha test results showing an ASCII timeline plot of the memory usage" src=".github/assets/demo.png">
 </picture>
-
 
 ## Install
 
@@ -152,7 +151,14 @@ node app.js --heapstats
 
 which does this:
 
-![GIF showing realtime memory usage as a line plot, in terminal][tail-demo]
+<picture>
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset=".github/assets/tail-demo--dark.gif">
+  <img
+    alt="GIF showing realtime memory usage as a line plot, in terminal"
+    src=".github/assets/tail-demo.gif">
+</picture>
 
 This is useful when prototyping.
 
@@ -223,7 +229,6 @@ describe('test..', function() { // regular function-callback
 [v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatsistics
 [mdn-perf-observe]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
 [oil]: https://v8.dev/blog/oilpan-library
-[tail-demo]: .github/docs/tail-demo.gif
 [mocha]: https://mochajs.org/
 [no-mocha-arrow]: https://github.com/meteor/guide/issues/318
 [examples]: .github/examples
