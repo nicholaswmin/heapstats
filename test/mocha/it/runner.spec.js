@@ -5,7 +5,7 @@ import chai from 'chai'
 chai.should()
 const exec = util.promisify(_exec)
 
-describe('test sync/async/done', function() {
+describe('it() callback styles', function() {
   this.timeout(20 * 10000).slow(15 * 1000)
 
   describe ('test is completely synchronous', function() {
