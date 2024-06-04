@@ -5,4 +5,4 @@ import leaky from '../../test/leaky.js'
 import Heapstats from '../../index.js'
 
 let leak = {}
-setInterval(() => leaky({ leak: {}, mb: 4 }), 1 * 1000)
+setInterval(() => leaky({ leak: {}, mb: 10 }), 300)

@@ -154,10 +154,10 @@ which does this:
 <picture>
   <source
     media="(prefers-color-scheme: dark)"
-    srcset=".github/assets/tail-demo--dark.gif">
+    srcset=".github/assets/demo-tail.gif">
   <img
     alt="GIF showing realtime memory usage as a line plot, in terminal"
-    src=".github/assets/tail-demo.gif">
+    src=".github/assets/demo-tail.gif">
 </picture>
 
 This is useful when prototyping.

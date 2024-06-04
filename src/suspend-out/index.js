@@ -10,7 +10,7 @@
 // Ensure you restore them by calling `restoreIO` after you're done.
 //
 // While i/o is intercepted, the only way to write to output is to include a
-// '*' in the text, i.e: `console.log('*' + 'yo')`
+// '⬝⬝' in the text, i.e: `console.log('⬝⬝' + 'yo')`
 //
 // ## Usage:
 //
@@ -40,13 +40,13 @@ const stdoutFn = process.stdout.write
 const stderrFn = process.stderr.write
 
 const writeOut = function () {
-  return arguments[0].includes('⬞⬝') ?
+  return arguments[0].includes('⬝⬝') ?
     stdoutFn.apply(process.stdout, arguments) :
     buffer.push({ dest: 'stdout', val: arguments[0] })
 }
 
 const writeErr = function () {
-  return arguments[0].includes('⬞⬝') ?
+  return arguments[0].includes('⬝⬝') ?
     stderrFn.apply(process.stderr, arguments) :
     buffer.push({ dest: 'stderr', val: arguments[0] })
 }
