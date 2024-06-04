@@ -2,20 +2,20 @@
 // Run with `npx mocha mocha.spec.js`
 
 import { expect } from 'chai'
-import Heapstats from '../../../../index.js'
+import Heapstats from '../../index.js'
 
 // Same as above but leaky
 global.leak = []
 const addTwoNumbersLeaky = (a, b) => new Promise(resolve => {
   const timer = setInterval(() =>
     global.leak.push(
-      JSON.stringify([Math.random().toString().repeat(5000)])
+      JSON.stringify([Math.random().toString().repeat(3000)])
     ), 1)
 
   setTimeout(() => {
     clearInterval(timer)
     resolve(a + b)
-  }, 100)
+  }, 1000)
 })
 
 describe('#addTwoNumbers', function() {
