@@ -15,29 +15,33 @@ import plot from './src/plot/index.js'
 v8.setFlagsFromString('--expose-gc')
 global.gc = vm.runInNewContext('gc')
 
-class Memstat {
-  constructor({ tail = false, window = {} } = {}) {
-    this.tail = tail
+class Heapstats {
+  constructor({
+    window = {},
+    tail = false,
+    test = null,
+    plotOnTest = ['failed'], // add 'passed' to always draw
+  } = {}) {
     this.window = window
-    this.stopped = false
+    this.tail = tail
+    this.plotOnTest = plotOnTest
+    this.snapshots = [this.getV8HeapStatisticsMB()]
 
-    this.stats = [v8.getHeapStatistics()]
-
+    // @TODO use polymorphism (class TailingHeaps extends ..)
     if (this.tail) {
       suspendOut()
       this.observeGC(() => this.update().redrawPlot())
+    } else {
+      this.observeGC(() => this.update())
     }
+
+    if (test)
+      this.drawPlotWhenTestStateChanges(test)
+
     this.update()
   }
 
-  // for time-based recording
-  record() {
-    this.throwIfCannotStart()
-    this.observeGC(() => this.update())
-  }
-
   // public
-  // for recording a single execution
   async sample(cb) {
     this.update()
 
@@ -49,35 +53,18 @@ class Memstat {
   }
 
   // public
-  end(ctx) {
-    this.disconnectGCObserver()
-
-    global.gc()
-
-    // in case we're in a Mocha test,
-    // we want to draw the plot on the *next event loop*
-    // since at this point we don't know if the test has passed/failed
-    // because it has not ended yet
-    if (ctx?.test)
-      this.schedulePlotDraw(ctx.test)
-
-    return new Promise(resolve =>
-      process.nextTick(() => resolve(this.getStats())))
-  }
-
-  // supposedly private,
-  // but expose it in case user wants a report before end..
-  getStats() {
+  stats() {
     return {
-      ...this._getStats(),
-      stats: [this.stats],
-      plot: plot(this._getStats())
+      snapshots: this.snapshots,
+      plot: plot(this.getStats()),
+      ...this.getStats()
     }
   }
 
-  // private
+  // rest are private
+
   redrawPlot() {
-    singleLineLog.stdout(plot(this._getStats()))
+    singleLineLog.stdout(plot(this.stats()))
   }
 
   exitTailMode() {
@@ -85,40 +72,27 @@ class Memstat {
     restoreOut()
   }
 
-  // private
-  schedulePlotDraw(test) {
-    setTimeout(() => {
-      if (!['failed'].includes(test.state))
-        return
-
-      console.log(plot({
-        title: `Test: ${test.parent ? test.parent.title : test.title}`,
-        failed: test?.state === 'failed',
-        ...this._getStats()
-      }))
-    })
-  }
-
-  // private
   update() {
-    this.stats.push(v8.getHeapStatistics())
+    this.snapshots.push(this.getV8HeapStatisticsMB())
 
     return this
   }
 
-  // private
   disconnectGCObserver() {
-    if (this.observer)
-      this.observer.disconnect()
+    this.observer.disconnect()
+
+    return this
   }
 
   observeGC(cb) {
     this.observer = new PerformanceObserver(() => cb())
     this.observer.observe({ entryTypes: ['gc'] })
+
+    return this
   }
 
-  _getStats() {
-    const used_heap_sizes = this.stats.map(stat => stat.used_heap_size)
+  getStats() {
+    const used_heap_sizes = this.snapshots.map(stat => stat.used_heap_size_mb)
 
     return {
       points: used_heap_sizes,
@@ -150,21 +124,65 @@ class Memstat {
     return Math.floor(percent)
   }
 
-  throwIfCannotStart() {
-    if (this.stopped)
-      throw new Error('Cannot restart a stopped instance. Create a new one.')
+  getV8HeapStatisticsMB() {
+    return Object.entries(v8.getHeapStatistics())
+      .reduce((acc, item) => ({
+        ...acc,
+        [item[0]] : item[1],
+        [item[0] + '_mb']: Heapstats.bytesToMB(item[1])
+      }), {})
+  }
+
+  drawPlotWhenTestStateChanges(ctx) {
+    const test = ctx.currentTest || ctx.test
+    const self = this
+    const title = test.title
+
+    // This is messing with Mochas internals;
+    // Mocha sets a `ctx.state = 'failed' or 'passed'` when the test ends,
+    // so we set a setter on that property it to observe and infer it's ending
+    // no other reliable way to detect when the test ends
+    Object.defineProperty(test, 'state', {
+      configurable: true,
+      get: function() {
+        return this._state
+      },
+
+      set: function(state) {
+        this._state = state
+
+        try {
+          if (self.plotOnTest.includes(state))
+            setImmediate(() => {
+              console.log(plot({
+                title: state ? `Test: "${title}" has ${state}` : title,
+                failed: state === 'failed',
+                ...self.stats()
+              }))
+            }, 0)
+        } catch (err) {
+          console.error(err)
+
+          throw err
+        }
+      }
+    })
+  }
+
+  static bytesToMB(bytes = 0) {
+    return Math.round((bytes / 1000 / 1000 + Number.EPSILON) * 100) / 100
   }
 }
 
 const window = {
-  columns: process.stdout.columns - 25,
-  rows: process.stdout.rows - 20
+  columns: (process.stdout.columns || 130) - 25,
+  rows: (process.stdout.rows || 40) - 25
 }
 
-if (process.argv.some(arg => arg.includes('--memstat'))) {
-  new Memstat({ tail: true, window })
+if (process.argv.some(arg => arg.includes('--heapstats'))) {
+  new Heapstats({ tail: true, window })
 }
 
-export default opts => new Memstat({
+export default opts => new Heapstats({
   tail: opts?.tail || false, window, ...opts
 })

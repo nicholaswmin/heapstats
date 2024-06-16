@@ -1,40 +1,45 @@
-// Run `node server.js`
-//
-// and in another window: `curl localhost:5033`
+// Run `node .github/examples/server.js`
+// then visit http://localhost:5033/
 //
 import http from 'node:http'
 
-import Memstat from '../../index.js'
-import { leaky } from '../../test/leaky.js'
+import Heapstats from '../../index.js'
+
+const addTwoNumbers = (a, b) => {
+  Array.isArray(global.leak) ?
+    global.leak.push(JSON.stringify([Math.random().toString().repeat(10000)])) :
+    global.leak = []
+
+  return new Promise(resolve => setTimeout(() => resolve(a + b), 1))
+}
 
 const server = http.createServer(async (req, res) => {
   try {
     if (req.url === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html' })
 
-      const memstat = Memstat()
+      const heap = Heapstats()
 
-      memstat.record()
+      for (let i = 0; i < 100; i++) {
+        await heap.sample(() => addTwoNumbers(5, 3))
 
-      for (let i = 0; i < 10; i++) {
-        await leaky({ mb: 50, timeout: 300 })
-
-        res.write(`<h4> Hi! I computed ${i + 1} out of 10 operations.</h4>`)
+        res.write(`<h4> Run leaky function ${i + 1} out of 100 times.</h4>`)
       }
 
-      const endUsage = await memstat.end()
-
-      console.log(endUsage.plot)
+      console.log(heap.stats().plot)
 
       res.write(`<h3> Done! You can view the heap plot in your terminal.</h3>`)
 
-      return res.end()
+    } else {
+      if (req.url.includes('favicon'))
+        return res.end()
+
+      res.writeHead(404)
+
+      console.error('HTTP Error: 404')
     }
 
-    res.writeHead(404)
     res.end()
-
-    console.error('HTTP Error: 404')
   } catch (err) {
     res.destroy(err)
     console.error('Server Error:', err)

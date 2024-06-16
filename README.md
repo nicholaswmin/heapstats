@@ -1,174 +1,349 @@
 [![test-workflow][test-workflow-badge]][ci-test]
 
-# memstat
+# heapstats
 
-terminal-based [V8 heap allocation][oilpan] plotter for Node
+A terminal-based [heap allocation][gc-wiki] plotter for [Node.js][node]
 
-![Mocha test with an ASCII plot timeline of the memory usage][demo]
+Plots memory usage & garbage collection stats by [V8][v8]'s
+[trace-based][tracing-gc-wiki] GC
+
+![Mocha test results showing memory usage as an ASCII timeline plot][demo-img]
 
 ## Install
 
 ```bash
-npm i git+ssh://git@github.com:nicholaswmin/memstat.git
+npm i heapstats
 ```
 
 ## Usage
 
-`memstat.sample(() => fn())`
+### Testing functions
 
-Run a potentially leaky function 100 times,
-then plot the allocation timeline:
+Run a [leaky-prone function][leaky-func-sync] 100 times & check if it leaks:
 
 ```js
-import Memstat from 'memstat'
+import Heapstats from 'heapstats'
 
-const memstat = Memstat()
+const heap = Heapstats()
 
 for (let i = 0; i < 100; i++)
-  await memstat.sample(() => leakyFunction())
+  heap.sample(() => addTwoNumbers(5, 3))
 
-const usage = await memstat.end()
-
-console.log(usage.plot)
+console.log(heap.stats().plot)
 ```
 
-where a leaky function could look like this:
+### Testing async functions
+
+Same as above but this time it's an [async function][leaky-func-async]:
 
 ```js
-let leak = '' // oops
+import Heapstats from 'heapstats'
 
-function aLeakyFunction(a, b) {
-  leak += JSON.stringify([`${Math.random()}`.repeat(500000)])
+const heap = Heapstats()
 
-  return a + b
+for (let i = 0; i < 100; i++)
+  await heap.sample(() => addTwoNumbers(5, 3))
+
+console.log(heap.stats().plot)
+```
+
+Assuming it does leaks memory, you'll see something like this:
+
+```text
+                      Heap Allocation Timeline
+
+Cur: 21.79 MB
+Max: 56.77 MB              Heap increased: 376%
+      ╷
+56.77 ┼                                 ╭─╮                                 
+45.62 ┤                            ╭────╯ │    ╭────╮     ╭────╮   
+34.46 ┤                      ╭─────╯      ╰────╯    │  ╭──╯    │
+23.31 ┤            ╭────╮  ╭─╯                      ╰──╯       ╰─  
+12.15 ┤       ╭────╯    ╰──╯                                       
+ 1.00 ┼───────╯                                                             
+      ┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬──
+
+Initial: 4.57 MB                                   GC Cycles: 27
+```
+
+### Testing an indeterminate process
+
+When testing something indeterminate, like an HTTP request, just
+instantiate it, do whatever work needs to be done and then get `.stats()`
+as usual.
+
+For example:
+
+```js
+
+const heap = Heapstats()
+
+app.get('/users', (req, res) => {
+  const users = await leakyDatabaseCall()
+
+  res.json(users)
+
+  console.log(heap.stats().plot)
+})
+```
+
+It starts collecting memory stats when you instantiate it - that is *if* a
+garbage collection/compaction actually takes place.
+
+No need to call `sample(() => someFunction())` in this case.
+
+### Heap statistics
+
+Apart from the ASCII plot, `heap.stats()` returns:
+
+```js
+{
+   // heap size on instantiation
+  "initial": 4.50,
+
+  // heap size now
+  "current": 21.30,
+
+  // max. heap size reached
+  "max": 32.00,
+
+   // diff. of initial and current, expressed as %
+  "increasePercentage": 2.4,
+
+   // collected stats of each garbage collection
+  "snapshots": [V8HeapStats, V8HeapStats ...]
 }
 ```
 
-### Time based collection
+sizes are in megabytes (MB).  
 
-`memstat.record()`
+A `V8HeapStats` object contains garbage collection statistics as captured by
+[v8.getHeapStatistics()][v8-heap-doc].  
+
+For more info about garbage collection in [V8][v8], [read here][oil].
+
+## As a unit-testing utility
+
+In [Mocha][mocha], you can pass the test context like so:
 
 ```js
-app.get('/users', (req, res) => {
-  const memstat = Memstat()
-  await  memstat.record()
 
-  for (let i = 0; i < 200; i++)
-    await leakyFunction('leak')
-
-  // or anything sync or async.. .
-
-  res.json({ foo: 'bar' })
-
-  console.log(await memstat.getStats())
-})
+Heapstats({ test: this })
 ```
 
-> Not really "time-based", strictly speaking; it's collected immediately
-> following a garbage collection cycle.
+the plot will auto-draw next to its test - but only if the test **fails**.
 
-### Additional stats
-
-Apart from the ASCII plot, `memstat.end()` returns:
 
 ```js
-console.log(usage)
-/*
-  initial: 9920688, // heap size bytes on instantiation
-  current: 9936184, // current heap size bytes
-  max: 9936184, // maximum size of allocated heap,
-  increasePercentage: 2.4, // difference of current and initial, expressed in %
-  stats: [V8HeapStats, V8HeapStats, V8HeapStats...] // collected stats
-*/
-```
+describe('#addTwoNumbers() - memory profiling', function() {
 
-`V8HeapStats` is an object containing heap allocation details and statistics   
-returned by [v8.getHeapStatistics()][v8-heap-doc]
+  beforeEach(async function() {
+    this.heap = Heapstats({ test: this }) // pass `test: this`
 
-### As a unit-testing utility
-
-This tool was made for integration into a testing suite.
-
-In [Mocha][mocha], you can pass the test context to `memstat.end(this)` and
-the plot will draw on failed tests on it's own.
-
-```js
-describe ('when the function is run 100 times', function() {
-  before('setup test', function() {
-    this.memstat = Memstat()
-  })
-
-  it ('does not leak memory', async function() {
     for (let i = 0; i < 200; i++)
-      await this.memstat.sample(() => leakyFunction(2, 3))
-
-    const usage = this.memstat.end(this) // pass this
-
-    expect(usage.percentageIncrease).to.be.below(10)
-    expect(usage.current).to.be.below(1024 * 1024 * 100)
+      this.heap.sample(() => addTwoNumbers(2, 3))
   })
 
-  // ... rest of tests
+  it ('does not leak memory', function() {
+    expect(this.heap.stats().current).to.be.below(10)
+  })
+
+  it ('does not exceed 100 MB in memory usage', function() {
+    expect(this.heap.stats().max).to.be.below(100)
+  })
+
+  it ('has not increased by more than 2%', function() {
+    expect(this.heap.stats().increasePercentage).to.be.below(2)
+  })
+
+  // ... and so on ...
 })
 ```
 
-### Tail mode
+> [!IMPORTANT]  
+> Avoid arrow functions/lambdas in Mocha `describe`/`it` callbacks, otherwise
+> `this` would be lexically bound to the wrong value. Mocha itself heavily
+> [discourages their use][no-mocha-arrow].  
+
+## Tail mode
 
 To observe realtime heap statistics:
 
+
 ```js
-import Memstat from 'memstat'
+import Heapstats from 'heapstats'
 ```
 
-and start with flag `--memstat`, i.e:
+and start with flag `--heapstats`, i.e:
 
 ```bash
-node app.js --memstat
+node app.js --heapstats
 ```
 
-which does this:
+![animation of realtime memory usage as a line plot, in terminal][tail-img]
 
-![GIF showing realtime memory usage as a line plot, in terminal][tail-demo]
+## Configuration
 
-Note that while live mode is pinned, any output to `stdout`/`stderr`
-is suppressed to avoid interfering with the redraw of the plot.
+```js
 
-In other words logging won't work while the plot is tailing.
+const heap = new Heapstats({
+  // plot size
+  window: { columns: 100, rows: 25 },
+
+  // test context, if used with mocha
+  test: this,
+
+  // draw plot if test ends in:
+  plotOnTest: ['passed', 'failed']
+})
+```
 
 ## Test
+
+```bash
+npm i
+```
+
+then:
 
 ```bash
 npm test
 ```
 
-### Notes
+To run a specific test in isolation, i.e `stats.spec.js`:
 
-- [Avoid arrow functions][no-mocha-arrow] in Mochas `describe`/`it`,
-  otherwise `this` will refer to the wrong scope.
-- Make sure you `await memstat.sample(() => functionUnderTest())`
 
-[More examples here][examples].
+```bash
+npx mocha test/stats.spec.js --no-package --global leak
+```
 
-### License
+## Gotchas
 
-> 2024 Nik Kyriakides, [@nicholaswmin][nicholaswmin]
+The purpose of this utility is simple:
 
-> The MIT License
+It allows you to quickly (i.e "visually") triage a failing unit test and
+discern false positives from actual leaks.
 
+...assuming you have a ***very*** good reason to be doing this kind of testing in
+the first place.
+
+### Avoid profiling in unit tests
+
+Which is an excellent way to footgun yourself.
+
+There's nothing fun about continuously stopping what you do just to tend to
+bitchy, crying and capricious unit tests; the exact opposite of how you want
+your unit-tests to behave.
+
+The GC used in V8 (and V8 itself) are ongoing research/development projects
+with a substantial amount of esoteric domain knowledge.
+
+Their operational semantics change quite often and quite dramatically -
+what you might have understood about it's method of operation this year can
+simply be [entirely out-of-date][gc-update] the next year.
+
+Profiling just implicitly breaks that abstraction layer - without realising it
+you're prone to unknowingly tie your unit-tests to semantics that are supposed
+to be hidden from you.
+
+#### Not a diagnostic tool
+
+This utility doesn't record anything about the *specifics* of memory allocation.  
+it only presents the min / max / average / current of the allocation *amounts*.
+
+While these are good indicators of a *potential* memory leak,  
+they are pretty useless when your aim is to diagnose a root cause.
+
+### No cycles, no stats
+
+The Garbage collector won't run if you're using (or abusing) small-ish
+amounts of memory - regardless if whatever you do is causing a leak or not.
+
+Good - that's the last thing you want anyway since collection cycles are
+computationally expensive.
+
+However, when testing, this poses a dilemma:
+
+> Is that a leak or is the GC just not running? Hmm... who knows?
+
+In these cases you'll most likely see a flatlined plot and a low number of
+`heap.stats().snapshots.length`. That's often entirely normal since the GC
+won't waste it's time over a few spilled bytes. If you see a cycle logged
+in the bottom-right corner - you guessed it, the GC has run.
+
+That's cool and all but the above dilemma hasn't been resolved.
+
+Instead of getting too philosophical about it, just do this:
+
+### Force a cycle
+
+You can always just force a garbage collection cycle via `global.gc()`.
+
+Has memory usage dropped to baseline? Yes? Then it's not a leak.
+
+Now it does sound pretty stupid to be doing that and calling it "testing" since
+you're now effectively ordering the GC around by telling it when to run.  
+
+It's not really *automatic memory management* when you're doing it yourself.
+
+You don't need to `--expose-gc` in this case.
+
+This module internally loads contextual runtime flags which expose the
+collector - so just do `global.gc()` in your code and you're good to go.
+
+#### Unlogged metrics
+
+The following are important metrics properties which indicate a potential
+memory leak yet they aren't logged, for now at least:
+
+- `number_of_native_contexts`
+- `number_of_detached_contexts`
+
+These stats come directly from V8 - the internal JIT compiler - they were
+exposed recently-"ish" in Node as `v8.getHeapStatistics()`
+
+## License
+
+> © 2024 Nicholas Kyriakides
+>
+> The MIT No Attribution License  
+>
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
-> in the Software without restriction, including without limitation the rights
+> in the Software *without restriction*, including without limitation the rights
 > to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 > copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
+> furnished to do so.
 
-[nicholaswmin ]: https://github.com/nicholaswmin
+
 [test-workflow-badge]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml/badge.svg
-[ci-test]: https://github.com/nicholaswmin/memstat/actions/workflows/tests.yml
-[v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatistics
-[oilpan]: https://v8.dev/blog/oilpan-library
-[demo]: .github/docs/demo.png
-[tail-demo]: .github/docs/tail-demo.gif
+[ci-test]: https://github.com/nicholaswmin/heapstats/actions/workflows/tests.yml
+[demo-img]: https://raw.githubusercontent.com/nicholaswmin/mine/main/public/heapstats/assets/demo.png
+[tail-img]: https://raw.githubusercontent.com/nicholaswmin/mine/main/public/heapstats/assets/demo-tail.gif
+
+[nicholaswmin]: https://github.com/nicholaswmin
+[async-func]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
+[await]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await
+[node]: https://nodejs.org/en
+[v8]: https://v8.dev/
+[oil]: https://v8.dev/blog/oilpan-library
+[gc-wiki]: https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)
+[tracing-gc-wiki]: https://en.wikipedia.org/wiki/Tracing_garbage_collection
+[v8-heap-doc]: https://nodejs.org/api/v8.html#v8getheapstatsistics
 [mocha]: https://mochajs.org/
-[no-mocha-arrow]: https://github.com/meteor/guide/issues/318
-[examples]: .github/examples
+[no-mocha-arrow]: https://mochajs.org/#arrow-functions
+[sampling]: https://en.wikipedia.org/wiki/Sampling_(statistics)
+[gc-update]: https://v8.dev/blog/trash-talk
+
+[mocha-example]: .github/examples/mocha.spec.js
+[leaky-func-sync]: .github/examples/basic.js#L7-L14
+[leaky-func-async]: .github/examples/basic-async.js#L7-L14
+
+[streams]: https://nodejs.org/en/learn/modules/backpressuring-in-streams
+[ee]: https://nodejs.org/en/learn/asynchronous-work/the-nodejs-event-emitter
+[stream-handling]: https://github.com/nodejs/help/issues/1979
+[brittle]: https://abseil.io/resources/swe-book/html/ch12.html
+[leak-pattern]: https://www.researchgate.net/figure/Linearly-increasing-memory-leak-pattern_fig2_352479475
+
+[memlab]: https://engineering.fb.com/2022/09/12/open-source/memlab/
+[node-memwatch]: https://github.com/airbnb/node-memwatch

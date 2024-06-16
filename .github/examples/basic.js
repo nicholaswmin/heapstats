@@ -1,21 +1,25 @@
-// Run in tail mode and observer a seesaw leak
-// start with `node tail.js --memstat`
+// Basic usage example, testing a synchronous leaky function
+//
+// Run with `node .github/examples/basic.js`
 
-import { leaky } from '../../test/leaky.js'
-import Memstat from '../../index.js'
+import Heapstats from '../../index.js'
 
-let leak = ''
-function aLeakyFunction(a, b) {
-  leak += JSON.stringify([`${Math.random()}`.repeat(500000)])
+// Sample synchronous leaky function
+const addTwoNumbers = (a, b) => {
+  Array.isArray(global.leak) ?
+    global.leak.push(JSON.stringify([Math.random().toString().repeat(15000)])) :
+    global.leak = []
 
   return a + b
 }
 
-const memstat = Memstat()
+const heap = Heapstats()
 
-for (let i = 0; i < 20; i++)
-  await memstat.sample(() => aLeakyFunction({ mb: 1 }))
+for (let i = 0; i < 200; i++)
+  heap.sample(() => addTwoNumbers(5, 3))
 
-const usage = await memstat.end()
-
-console.log(usage.plot)
+console.log(heap.stats().plot)
+console.log('Initial:', heap.stats().initial, 'MB')
+console.log('Current:', heap.stats().current, 'MB')
+console.log('Maximum:', heap.stats().max, 'MB')
+console.log('Increase:', heap.stats().increasePercentage, '%')

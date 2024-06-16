@@ -20,11 +20,9 @@ import asciichart from 'asciichart'
 import stripAnsi from 'strip-ansi'
 
 export default function plot(yArray, config = {}) {
-  const getColor = () => {
-    return Array.isArray(config.colors) ?
-      (config.colors[0] || '') :
-      asciichart.default;
-  }
+  const color = Array.isArray(config.colors) ?
+    (config.colors[0] || '') :
+    asciichart.default;
 
   yArray = Array.isArray(yArray[0]) ? yArray : [yArray];
 
@@ -104,7 +102,7 @@ export default function plot(yArray, config = {}) {
   }
 
   const title = config.title ?
-    `${' '.repeat(leftMargin + (widthXaxis - config.title.length)/2)}${config.title}\n\n` :
+    `${color}${' '.repeat(leftMargin + (widthXaxis - config.title.length)/2)}${config.title}\n\n` :
     '';
   const xLabelMargin = 5
 
@@ -112,8 +110,6 @@ export default function plot(yArray, config = {}) {
   if(config.yLabel || Array.isArray(config.lineLabels)) {
     if(config.yLabels) {
       for(let i = 0; i <= config.yLabels.length - 1; i++) {
-        const color = getColor()
-
         yLabel +=
           `${color}${' '.repeat(xLabelMargin)}${config.yLabels[i]}${asciichart.reset}${i === config.yLabels.length - 1 ? '' : '\n'}`;
       }
@@ -122,14 +118,10 @@ export default function plot(yArray, config = {}) {
       let legend = '';
       for(let i = 0; i < Math.min(yArray.length, config.lineLabels
         .length); i++) {
-        const color = getColor()
-
         legend += `    ${color}─── ${config.lineLabels[i]}${asciichart.reset}`;
       }
 
       for(let j = 0; j <= config.sublabels.length - 1; j++) {
-        const color = getColor()
-
         legend += `      ${color}${config.sublabels[j]}${asciichart.reset}`;
       }
 
@@ -145,5 +137,9 @@ export default function plot(yArray, config = {}) {
     `\n${asciichart.blue}${xStartLabel}${config.xLabel.padStart(fullWidth - xStartLabel.length - 1)}${asciichart.reset}` :
     '';
 
-  return `*\n${title}${yLabel}${plot}\n${ticks}\n${xLabel}\n${' '.repeat(xLabelMargin)}\n`;
+  // @NOTE The beginning and end are marked by `⬞⬞` <- for start padding
+  // and -> `⬝⬝` for end padding. These distinct unicode sequences are
+  // used in tests to verify existence and size of the plot in the tests.
+  // Each side uses different chars, although they look the same.
+  return `⬝⬝\n${title}${yLabel}${plot}\n${ticks}\n${xLabel}\n${' '.repeat(xLabelMargin)}\n⬞⬞`;
 }

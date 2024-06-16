@@ -1,7 +1,16 @@
 // Run in tail mode and observer a seesaw leak
-// start with `node tail.js --memstat`
+// start with `node .github/examples/tail.js --heapstats`
 
-import { leaky } from '../../test/leaky.js'
-import Memstat from '../../index.js'
+import Heapstats from '../../index.js'
 
-setInterval(() => leaky({ mb: 25 }), 1 * 1000)
+const addTwoNumbers = (a, b) => {
+  Array.isArray(global.leak) ?
+    global.leak.push(JSON.stringify([Math.random().toString().repeat(10000)])) :
+    global.leak = []
+
+  return new Promise(resolve => setTimeout(() => resolve(a + b), 1))
+}
+
+setInterval(() => {
+  addTwoNumbers(3, 5)
+}, 50)

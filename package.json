@@ -1,6 +1,6 @@
 {
-  "name": "memstat",
-  "version": "0.1.0",
+  "name": "heapstats",
+  "version": "0.5.5",
   "description": "terminal-based heap allocation plotter",
   "type": "module",
   "main": "index.js",
@@ -9,20 +9,38 @@
   },
   "mocha": {
     "exit": true,
+    "bail": true,
     "check-leaks": true,
     "colors": true,
+    "global": "leak",
     "spec": [
-      "test/*/*.spec.js",
-      "test/*.spec.js"
+      "test/*.spec.js",
+      "test/*/*/*.spec.js"
     ]
+  },
+  "engines": {
+    "node": ">=16"
   },
   "keywords": [
     "garbage-collector",
     "memory-leak",
+    "memory",
     "mocha",
-    "nodejs"
+    "nodejs",
+    "oilpan",
+    "memory-usage",
+    "heap",
+    "memwatch"
   ],
-  "author": "@nicholaswmin",
+  "homepage": "https://github.com/nicholaswmin/heapstats#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicholaswmin/heapstats.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nicholaswmin/heapstats/issues"
+  },
+  "author": "Nicholas Kyriakides <nik.kyriakides[at][gmail.com]> (@nicholaswmin)",
   "license": "MIT",
   "dependencies": {
     "asciichart": "^1.5.25",
