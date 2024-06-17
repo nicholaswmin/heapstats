@@ -219,40 +219,37 @@ npx mocha test/stats.spec.js --no-package --global leak
 
 ## Gotchas
 
-The purpose of this utility is simple:
+A quick word about unit-testing and profiling:
+
+The purpose of this utility is simple.
 
 It allows you to quickly (i.e "visually") triage a failing unit test and
 discern false positives from actual leaks.
 
-...assuming you have a ***very*** good reason to be doing this kind of testing in
-the first place.
+.. but I'm **not** suggesting you should be doing any kind of profiling.
+
+In fact I think it's really good way to waste your time.
 
 ### Avoid profiling in unit tests
 
-Which is an excellent way to footgun yourself.
-
 There's nothing fun about continuously stopping what you do just to tend to
-bitchy, crying and capricious unit tests; the exact opposite of how you want
-your unit-tests to behave.
+bitchy, crying and capricious unit tests; the diametrical opposite of how you
+want your unit-tests to behave.
 
-The GC used in V8 (and V8 itself) are ongoing research/development projects
-with a substantial amount of esoteric domain knowledge.
+It's almost impossible to predict how a modern GC runs - this means you can't
+write a good (read deterministic) test for it.
+You can try and get clever with it by using tolerances but tolerances have
+a direct impact on the accuracy of the test itself. 
 
-Their operational semantics change quite often and quite dramatically -
-what you might have understood about it's method of operation this year can
-simply be [entirely out-of-date][gc-update] the next year.
+I wrote this for prototyping Streams which are virtually ticking timebombs
+that could blow up in your face if you even think about not handling some  
+particular and oftentimes bizarre error path.  
 
-Profiling just implicitly breaks that abstraction layer - without realising it
-you're prone to unknowingly tie your unit-tests to semantics that are supposed
-to be hidden from you.
+I cannot imagine any other use case other than that - but if there
+is one it's probably best to do this kind of profiling in a more appropriate
+testing phase, farther down the road.
 
-#### Not a diagnostic tool
-
-This utility doesn't record anything about the *specifics* of memory allocation.  
-it only presents the min / max / average / current of the allocation *amounts*.
-
-While these are good indicators of a *potential* memory leak,  
-they are pretty useless when your aim is to diagnose a root cause.
+Now back to the gotchas:
 
 ### No cycles, no stats
 
@@ -282,9 +279,9 @@ You can always just force a garbage collection cycle via `global.gc()`.
 Has memory usage dropped to baseline? Yes? Then it's not a leak.
 
 Now it does sound pretty stupid to be doing that and calling it "testing" since
-you're now effectively ordering the GC around by telling it when to run.  
+you've ended up effectively ordering the GC around - by telling it when to run.  
 
-It's not really *automatic memory management* when you're doing it yourself.
+🤷
 
 You don't need to `--expose-gc` in this case.
 
