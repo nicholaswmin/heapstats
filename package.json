@@ -1,6 +1,6 @@
 {
   "name": "heapstats",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "terminal-based heap allocation plotter",
   "type": "module",
   "main": "index.js",

@@ -219,85 +219,58 @@ npx mocha test/stats.spec.js --no-package --global leak
 
 ## Gotchas
 
-A quick word about unit-testing and profiling:
+### Just avoid profiling
 
-The purpose of this utility is simple.
+Modern GC's don't have concrete rules on when to run and how to run.  
+Their method of operation is intentionally abstracted from the user (you)
+for a good reason so messing with it when testing is almost certain to make
+your unit tests [brittle and flaky][brittle].
 
-It allows you to quickly (i.e "visually") triage a failing unit test and
-discern false positives from actual leaks.
+I only wrote this because I needed a visual way to triage unit-tests when I was
+messing with [Streams][streams], which have explicit resource acquisition
+and release steps.
 
-.. but I'm **not** suggesting you should be doing any kind of profiling.
+### Flatlined stats
 
-In fact I think it's really good way to waste your time.
+Garbage Collectors won't run if you're using (or abusing) small-ish
+amounts of memory regardless if whatever you're doing is actually causing
+a leak.
 
-### Avoid profiling in unit tests
+In these cases you'll see a flatlined plot and a low number of
+`heap.stats().snapshots.length`.
 
-There's nothing fun about continuously stopping what you do just to tend to
-bitchy, crying and capricious unit tests; the diametrical opposite of how you
-want your unit-tests to behave.
+There's always a bit of a weird dilemma in figuring out if there's no leak or
+if the GC has simply not kicked in yet.
 
-It's almost impossible to predict how a modern GC runs - this means you can't
-write a good (read deterministic) test for it.
-You can try and get clever with it by using tolerances but tolerances have
-a direct impact on the accuracy of the test itself. 
+The best way to go about it is to setup your test in a way that really
+stresses the function under test and wait for a cycle. This means you
+should run your function `n` amount of times, not just once. The `n` here
+can easily mean tens of thousands or even millions of iterations.
 
-I wrote this for prototyping Streams which are virtually ticking timebombs
-that could blow up in your face if you even think about not handling some  
-particular and oftentimes bizarre error path.  
+If your function is expected to use *some* memory, the GC will **have to**
+eventually kick in to deallocate it - there's no other way to manually
+deallocate memory in the language.
 
-I cannot imagine any other use case other than that - but if there
-is one it's probably best to do this kind of profiling in a more appropriate
-testing phase, farther down the road.
+If you're not seeing a cycle being logged and you're impatient about the whole
+thing, you can always just force the GC to run by calling `global.gc()`.
 
-Now back to the gotchas:
+### Don't trust single cycles
 
-### No cycles, no stats
+I've never seen a real memory leak where memory usage increases monotonically
+and linearly until it eventually runs out of memory.
 
-The Garbage collector won't run if you're using (or abusing) small-ish
-amounts of memory - regardless if whatever you do is causing a leak or not.
+A real memory leak, the kind that could happen in your actual production system,
+will usually present itself in a ["seesaw" pattern][leak-pattern].
 
-Good - that's the last thing you want anyway since collection cycles are
-computationally expensive.
+This means a GC cycle takes place, memory usage drops - but it just doesn't
+quite drop entirely back to baseline.  
 
-However, when testing, this poses a dilemma:
+There's always just a little bit extra being held after each cycle.
 
-> Is that a leak or is the GC just not running? Hmm... who knows?
+It's only when you project this effect over an extended period of time that you
+can clearly tell that it's a leak.
 
-In these cases you'll most likely see a flatlined plot and a low number of
-`heap.stats().snapshots.length`. That's often entirely normal since the GC
-won't waste it's time over a few spilled bytes. If you see a cycle logged
-in the bottom-right corner - you guessed it, the GC has run.
-
-That's cool and all but the above dilemma hasn't been resolved.
-
-Instead of getting too philosophical about it, just do this:
-
-### Force a cycle
-
-You can always just force a garbage collection cycle via `global.gc()`.
-
-Has memory usage dropped to baseline? Yes? Then it's not a leak.
-
-Now it does sound pretty stupid to be doing that and calling it "testing" since
-you've ended up effectively ordering the GC around - by telling it when to run.  
-
-🤷
-
-You don't need to `--expose-gc` in this case.
-
-This module internally loads contextual runtime flags which expose the
-collector - so just do `global.gc()` in your code and you're good to go.
-
-#### Unlogged metrics
-
-The following are important metrics properties which indicate a potential
-memory leak yet they aren't logged, for now at least:
-
-- `number_of_native_contexts`
-- `number_of_detached_contexts`
-
-These stats come directly from V8 - the internal JIT compiler - they were
-exposed recently-"ish" in Node as `v8.getHeapStatistics()`
+Don't rely on the results of just 1 cycle.
 
 ## License
 
@@ -339,7 +312,7 @@ exposed recently-"ish" in Node as `v8.getHeapStatistics()`
 [streams]: https://nodejs.org/en/learn/modules/backpressuring-in-streams
 [ee]: https://nodejs.org/en/learn/asynchronous-work/the-nodejs-event-emitter
 [stream-handling]: https://github.com/nodejs/help/issues/1979
-[brittle]: https://abseil.io/resources/swe-book/html/ch12.html
+[brittle]: https://softwareengineering.stackexchange.com/a/356238/108346
 [leak-pattern]: https://www.researchgate.net/figure/Linearly-increasing-memory-leak-pattern_fig2_352479475
 
 [memlab]: https://engineering.fb.com/2022/09/12/open-source/memlab/
